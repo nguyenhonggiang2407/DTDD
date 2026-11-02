@@ -1,19 +1,23 @@
-# Nguồn và phạm vi phát triển
+# Provenance and attribution
 
-YangCareer là bản phát triển dựa trên [TalentBridge](https://github.com/Trinhvhao/TalentBridge)
-của **Trịnh Văn Hào**, theo giấy phép MIT.
+YangData implementation © 2026 Nguyễn Hồng Giang, released under the MIT License.
 
-- Nguồn đã đọc: commit `acb5ad12bb8108c28c0058f997b0595633aad216`.
-- Giữ nguyên dòng bản quyền và toàn bộ điều khoản trong `LICENSE`.
-- Người phát triển phần nâng cấp: **Nguyễn Hồng Giang**.
-- Backend kế thừa các luồng FastAPI, schema CV/job, truy vấn dữ liệu,
-  gợi ý việc làm và phân tích CV từ TalentBridge.
-- Phần nâng cấp gồm phiên riêng cho CV, CSRF, giới hạn upload PDF, preview
-  không lưu file công khai, cấu hình gọn hơn, giao diện mới và kiểm thử.
-- Không đưa bộ dữ liệu tuyển dụng thu thập bên ngoài và template frontend gốc
-  vào bản phân phối này. Dữ liệu mẫu mới là hư cấu.
-- Bài báo và báo cáo của tác giả gốc không được đổi tên tác giả hoặc nhận là
-  sản phẩm của Nguyễn Hồng Giang; có thể xem ở repository nguồn.
+## Preserved reference
 
-Tên người phát triển mới áp dụng cho phần bổ sung và thương hiệu của bản này,
-không thay thế quyền tác giả của mã kế thừa.
+- Repository viewed: https://github.com/Trinhvhao/ai-engineering-hub
+- Original project: https://github.com/patchy631/ai-engineering-hub
+- Snapshot: 86dc1699fe036e5cd21ed7d3c57419a7fc3c844b
+- Original file: rag-sql-router/tools.py
+- Preserved unmodified copy: upstream/rag_sql_tools.py
+- Original copyright: Copyright (c) 2024 patchy631
+- License: MIT; the original license text is retained in LICENSE.
+
+The reference demonstrates querying a CSV-backed SQLite dataset and separating database tools from the conversation layer. It is reference material and is never imported or executed by this application.
+
+## New implementation
+
+The Node.js server, CSV import/type inference, owned physical tables, parameterized query grammar, pagination, saved report snapshots, optimistic concurrency, workspace expiry cleanup, exports, UI, tests and container configuration are newly implemented for YangData. CSV parsing/export helpers are shared with YangQueue (Nguyễn Hồng Giang's MIT implementation).
+
+The application deliberately implements a deterministic query builder. It has no natural-language-to-SQL agent, LLM, embedding service, external scraping, credential storage or public data sharing. It is not the complete upstream application and makes no claim to authorship of the preserved reference.
+
+All included sample orders are fictional. Personal branding refers to Nguyễn Hồng Giang; upstream authorship and license notices remain intact.
