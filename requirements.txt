@@ -1,0 +1,7 @@
+fastapi==0.117.1
+uvicorn==0.37.0
+pydantic==2.11.9
+python-dotenv==1.1.1
+python-multipart==0.0.20
+python-dateutil==2.9.0.post0
+httpx==0.28.1

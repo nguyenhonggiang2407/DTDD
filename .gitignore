@@ -1,6 +1,15 @@
 .env
+.env.*
+!.env.example
 .venv/
 __pycache__/
-*.pyc
+*.py[cod]
+db/
 *.db
-*.sqlite3
+*.sqlite*
+*.log
+node_modules/
+test-results/
+playwright-report/
+.DS_Store
+Thumbs.db
