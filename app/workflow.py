@@ -194,6 +194,13 @@ class DocumentWorkflow:
             words = normalize(hit["name"] + " " + hit["text"]).split()
             hit["coverage"] = sum(any(word.startswith(term) for word in words) for term in terms)
         hits.sort(key=lambda hit: (-hit["coverage"], hit["rank"]))
+        # When complete matches exist, suppress unrelated one-word matches.
+        required_coverage = (
+            len(terms)
+            if hits and hits[0]["coverage"] == len(terms)
+            else max(1, (len(terms) + 1) // 2)
+        )
+        hits = [hit for hit in hits if hit["coverage"] >= required_coverage]
         counts = Counter()
         selected = []
         for hit in hits:

@@ -88,6 +88,13 @@ def test_pdf_citation_points_to_actual_page(client):
     assert client.get(f"/api/documents/{doc['id']}/pages/3").status_code == 404
 
 
+def test_complete_keyword_match_suppresses_irrelevant_single_terms(client):
+    relevant = upload(client, "Làm việc từ xa tối đa 2 ngày mỗi tuần.", "Remote.md").json()
+    upload(client, "Cách làm bài tập về nhà và thiết kế cơ sở dữ liệu.", "Homework.md")
+    hits = client.post("/api/search", json={"query": "lam viec tu xa"}).json()["hits"]
+    assert [hit["document_id"] for hit in hits] == [relevant["id"]]
+
+
 @pytest.mark.parametrize(
     "name,data,status",
     [

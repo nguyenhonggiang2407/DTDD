@@ -124,6 +124,8 @@ async function loadDemo() {
   await perform(async () => {
     const result = await api("/api/demo", { method: "POST" });
     await refresh();
+    $("#library-title").tabIndex = -1;
+    $("#library-title").focus({ preventScroll: true });
     toast(result.added ? `Đã thêm ${result.added} tài liệu mẫu. Thử tìm “làm việc từ xa”.` : "Bộ tài liệu mẫu đã có trong thư viện.");
   });
   buttons.forEach(button => { button.disabled = false; });
@@ -153,7 +155,7 @@ function renderResults(result) {
   $("#export-results").disabled = !result.hits.length;
   $("#results").replaceChildren();
   if (!result.hits.length) {
-    $("#results").append(renderEmpty("Chưa tìm thấy nội dung phù hợp.", "Thử từ khóa ngắn hơn, kiểm tra định dạng đang lọc hoặc thêm tài liệu liên quan.", !state.documents.length));
+    $("#results").append(renderEmpty("Chưa tìm thấy nội dung phù hợp.", "Thử từ khóa ngắn hơn, kiểm tra tài liệu đã thêm hoặc bổ sung tài liệu liên quan.", !state.documents.length));
     return;
   }
   for (const hit of result.hits) {

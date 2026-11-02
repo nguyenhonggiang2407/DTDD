@@ -74,6 +74,7 @@ def test_desktop_search_citation_export_and_screenshot(browser, server, tmp_path
     page.get_by_role("button", name="Thử bộ tài liệu mẫu", exact=True).click()
     expect(page.locator(".document-card")).to_have_count(3)
     expect(page.locator("#stat-pages")).to_have_text("3")
+    expect(page.locator("#toast")).not_to_be_visible(timeout=6000)
     SCREENSHOTS.mkdir(parents=True, exist_ok=True)
     page.screenshot(path=str(SCREENSHOTS / "desktop.png"), full_page=True)
 
@@ -136,6 +137,7 @@ def test_mobile_upload_safe_render_pin_preview_and_delete(browser, server):
     page.get_by_role("button", name="Thư viện", exact=False).click()
     page.get_by_role("button", name="Thử bộ tài liệu mẫu", exact=True).click()
     expect(page.locator(".document-card")).to_have_count(3)
+    expect(page.locator("#toast")).not_to_be_visible(timeout=6000)
     SCREENSHOTS.mkdir(parents=True, exist_ok=True)
     page.screenshot(path=str(SCREENSHOTS / "mobile.png"), full_page=True)
     # DOM measurement validates actual horizontal overflow, including hidden dialog handling.
