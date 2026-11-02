@@ -3,3 +3,4 @@ data/
 upstream/
 docs/screenshots/
 package-lock.json
+.github/workflows/

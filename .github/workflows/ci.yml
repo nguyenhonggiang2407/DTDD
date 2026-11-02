@@ -44,7 +44,8 @@ jobs:
       - name: Commit tested formatting and screenshots
         if: github.event_name == 'push' && (github.ref == 'refs/heads/yangqueue' || github.ref == 'refs/heads/main')
         run: |
-          git add lib public test server.mjs package.json README.md NOTICE.md .github .prettierrc.json compose.yaml docs/screenshots
+          git restore .github/workflows/ci.yml
+          git add lib public test server.mjs package.json README.md NOTICE.md .prettierrc.json compose.yaml docs/screenshots
           if git diff --cached --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
