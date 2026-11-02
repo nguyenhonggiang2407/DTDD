@@ -1,19 +1,31 @@
-# Nguồn và phạm vi phát triển
+# Attribution & provenance
 
-YangCareer là bản phát triển dựa trên [TalentBridge](https://github.com/Trinhvhao/TalentBridge)
-của **Trịnh Văn Hào**, theo giấy phép MIT.
+YangDocs is maintained and branded for **Nguyễn Hồng Giang**
+([nguyenhonggiang2407](https://github.com/nguyenhonggiang2407)).
 
-- Nguồn đã đọc: commit `acb5ad12bb8108c28c0058f997b0595633aad216`.
-- Giữ nguyên dòng bản quyền và toàn bộ điều khoản trong `LICENSE`.
-- Người phát triển phần nâng cấp: **Nguyễn Hồng Giang**.
-- Backend kế thừa các luồng FastAPI, schema CV/job, truy vấn dữ liệu,
-  gợi ý việc làm và phân tích CV từ TalentBridge.
-- Phần nâng cấp gồm phiên riêng cho CV, CSRF, giới hạn upload PDF, preview
-  không lưu file công khai, cấu hình gọn hơn, giao diện mới và kiểm thử.
-- Không đưa bộ dữ liệu tuyển dụng thu thập bên ngoài và template frontend gốc
-  vào bản phân phối này. Dữ liệu mẫu mới là hư cấu.
-- Bài báo và báo cáo của tác giả gốc không được đổi tên tác giả hoặc nhận là
-  sản phẩm của Nguyễn Hồng Giang; có thể xem ở repository nguồn.
+## Licensed starting point
 
-Tên người phát triển mới áp dụng cho phần bổ sung và thương hiệu của bản này,
-không thay thế quyền tác giả của mã kế thừa.
+- Original project: [patchy631/ai-engineering-hub](https://github.com/patchy631/ai-engineering-hub).
+- Source encountered through: [Trinhvhao/ai-engineering-hub](https://github.com/Trinhvhao/ai-engineering-hub), a fork of that project.
+- Inspected snapshot: `86dc1699fe036e5cd21ed7d3c57419a7fc3c844b`.
+- Example: [`simple-rag-workflow/workflow.py`](https://github.com/Trinhvhao/ai-engineering-hub/blob/86dc1699fe036e5cd21ed7d3c57419a7fc3c844b/simple-rag-workflow/workflow.py).
+- Original copyright: **Copyright (c) 2024 patchy631**. The complete original MIT license is preserved in [LICENSE](LICENSE).
+- An unmodified copy of the example is retained in [upstream/workflow.py](upstream/workflow.py). It is a reference, not imported by the application or included in the runtime dependencies.
+
+## Changes in this repository
+
+YangDocs reworks the ingest → retrieve → synthesize architecture into
+ingest → scoped keyword retrieval → exact, page-addressable evidence. It adds
+FastAPI, persistent SQLite FTS5, Vietnamese normalization, per-workspace document
+ownership, bounded uploads, CSRF and Origin checks, favorites, source preview,
+Markdown export, a responsive interface, tests and container instructions.
+
+The runtime implementation and UI were newly developed for this derivative.
+This is not a claim that Giang authored the upstream example or its model work.
+The original author's name and license are intentionally kept in attribution.
+No upstream research PDFs, scraped data, private contact details, screenshots,
+branding, or model weights are redistributed. All example Markdown documents
+in this repository are fictional teaching material created for YangDocs.
+
+New YangDocs-specific code: Copyright (c) 2026 Nguyễn Hồng Giang, distributed
+under the MIT terms in LICENSE, in addition to the retained upstream notice.

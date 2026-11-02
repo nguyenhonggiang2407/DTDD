@@ -1,0 +1,43 @@
+name: Quality & browser checks
+on:
+  push:
+    branches: [main, yangdocs-preview]
+    paths-ignore: ["docs/screenshots/**"]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: pip check
+      - run: ruff check app tests
+      - run: ruff format --check app tests
+      - run: python -m pytest tests/test_documents.py -q
+      - run: python -m playwright install --with-deps chromium
+      - run: python -m pytest tests/test_ui.py -q
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: yangdocs-screenshots
+          path: docs/screenshots/
+          if-no-files-found: ignore
+      - name: Commit verified screenshots
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/yangdocs-preview')
+        run: |
+          git add docs/screenshots/*.png
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: refresh tested interface screenshots [skip ci]"
+          git push

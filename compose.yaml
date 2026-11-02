@@ -1,0 +1,14 @@
+services:
+  yangdocs:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - yangdocs-data:/app/data
+    environment:
+      YANGDOCS_ALLOWED_HOSTS: localhost,127.0.0.1
+    mem_limit: 512m
+    cpus: 1.0
+    restart: unless-stopped
+volumes:
+  yangdocs-data:
