@@ -22,12 +22,12 @@ Mã hiện nằm ở nhánh **yangqueue** của repo DTDD.
 
 Cần Node.js 24 trở lên.
 
-~~~bash
+```bash
 git clone --branch yangqueue --single-branch https://github.com/nguyenhonggiang2407/DTDD.git YangQueue
 cd YangQueue
 npm ci
 npm start
-~~~
+```
 
 Mở <http://127.0.0.1:3120>. Chọn **Thử dữ liệu mẫu**, rồi **Tiếp tục** để chạy
 ba tác vụ bằng worker thật. Bộ mẫu đầu tiên được nạp ở trạng thái tạm dừng để
@@ -35,27 +35,27 @@ bạn có thể quan sát hàng đợi trước khi xử lý.
 
 Chỉ chạy ứng dụng:
 
-~~~bash
+```bash
 npm ci --omit=dev
 npm start
-~~~
+```
 
 Hoặc:
 
-~~~bash
+```bash
 docker compose up --build
-~~~
+```
 
 Compose bind cổng vào loopback, lưu SQLite trong named volume và giới hạn
 tài nguyên container. CI có bước build image và gọi health check từ container.
 
 ## Các tác vụ
 
-| Kiểu | Xử lý | Kết quả |
-|---|---|---|
-| csv-clean | Đọc CSV có quoted comma, CRLF, ô nhiều dòng; tùy chọn trim và loại dòng trùng; bỏ dòng trống | CSV UTF-8 BOM, báo cáo số dòng/ô và preview |
-| json-csv | Chuyển mảng object sang bảng theo hợp các thuộc tính; giá trị lồng nhau được stringify | CSV và báo cáo cột/dòng |
-| text-stats | Đếm token chữ/số, dòng, ký tự và 10 từ xuất hiện nhiều nhất, giữ dấu tiếng Việt | Báo cáo Markdown |
+| Kiểu       | Xử lý                                                                                        | Kết quả                                     |
+| ---------- | -------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| csv-clean  | Đọc CSV có quoted comma, CRLF, ô nhiều dòng; tùy chọn trim và loại dòng trùng; bỏ dòng trống | CSV UTF-8 BOM, báo cáo số dòng/ô và preview |
+| json-csv   | Chuyển mảng object sang bảng theo hợp các thuộc tính; giá trị lồng nhau được stringify       | CSV và báo cáo cột/dòng                     |
+| text-stats | Đếm token chữ/số, dòng, ký tự và 10 từ xuất hiện nhiều nhất, giữ dấu tiếng Việt              | Báo cáo Markdown                            |
 
 Mỗi tác vụ nhận tối đa **256 KB** nội dung. CSV/JSON tối đa **5.000 dòng, 30 cột**;
 JSON sâu tối đa 8 mức; văn bản tối đa 20.000 từ. Đầu ra tối đa 1 MB.
@@ -68,7 +68,7 @@ crawl web, gửi bài hay lưu khóa API.
 
 ## Cơ chế hàng đợi
 
-~~~mermaid
+```mermaid
 stateDiagram-v2
     direction TB
     [*] --> queued
@@ -80,7 +80,7 @@ stateDiagram-v2
     queued --> cancelled: người dùng hủy
     retry_wait --> cancelled: người dùng hủy
     running --> cancelled: thu hồi claim và dừng worker
-~~~
+```
 
 - Mỗi lượt claim có token và lease 10 giây. Heartbeat mỗi giây chỉ gia hạn claim
   còn hiệu lực. Worker cũ không thể ghi đè kết quả sau khi lease mất hoặc bị hủy.
@@ -106,29 +106,29 @@ không phải cam kết exactly-once hoặc một hàng đợi phân tán đa m�
 GET /api/workspace trả cookie HttpOnly/SameSite=Strict và token csrf.
 Gửi X-CSRF-Token cho các thao tác ghi. Mọi API dữ liệu đều kiểm tra workspace.
 
-| Phương thức | Endpoint | Chức năng |
-|---|---|---|
-| GET | /api/queue?q=...&state=... | Danh sách, thống kê và trạng thái tạm dừng của workspace |
-| POST | /api/jobs | Tạo job; cần Idempotency-Key |
-| GET | /api/jobs/{id} | Job, input, kết quả và nhật ký thuộc workspace |
-| POST | /api/jobs/{id}/cancel | Hủy với version |
-| POST | /api/jobs/{id}/retry | Tạo lượt chạy con với version và key mới |
-| DELETE | /api/jobs/{id} | Xóa tác vụ đã kết thúc với version |
-| GET | /api/jobs/{id}/download | Tải file sau khi thành công |
-| POST | /api/queue/pause | paused: true hoặc false |
-| POST | /api/demo | Nạp dữ liệu giả lập, không nhân bản |
-| GET | /health | Kiểm tra HTTP và kết nối SQLite |
+| Phương thức | Endpoint                   | Chức năng                                                |
+| ----------- | -------------------------- | -------------------------------------------------------- |
+| GET         | /api/queue?q=...&state=... | Danh sách, thống kê và trạng thái tạm dừng của workspace |
+| POST        | /api/jobs                  | Tạo job; cần Idempotency-Key                             |
+| GET         | /api/jobs/{id}             | Job, input, kết quả và nhật ký thuộc workspace           |
+| POST        | /api/jobs/{id}/cancel      | Hủy với version                                          |
+| POST        | /api/jobs/{id}/retry       | Tạo lượt chạy con với version và key mới                 |
+| DELETE      | /api/jobs/{id}             | Xóa tác vụ đã kết thúc với version                       |
+| GET         | /api/jobs/{id}/download    | Tải file sau khi thành công                              |
+| POST        | /api/queue/pause           | paused: true hoặc false                                  |
+| POST        | /api/demo                  | Nạp dữ liệu giả lập, không nhân bản                      |
+| GET         | /health                    | Kiểm tra HTTP và kết nối SQLite                          |
 
 Ví dụ payload tạo job:
 
-~~~json
+```json
 {
   "title": "Làm sạch danh sách",
   "type": "csv-clean",
   "input": "name\nA\nA\n",
   "options": { "trim": true, "dedupe": true }
 }
-~~~
+```
 
 Response nhận việc có requestId, status và job. HTTP 201 là tạo mới, 200 là
 replay. Các lỗi nghiệp vụ dùng 400/401/403/404/409/410/413/415 theo ngữ cảnh.
@@ -136,25 +136,25 @@ Request JSON không nén tối đa 768 KB, kể cả khi không gửi Content-Le
 
 ## Tổ chức mã
 
-| Tệp | Vai trò |
-|---|---|
-| server.mjs | HTTP, session, CSRF/Origin/Host, API và static allowlist |
-| lib/store.mjs | SQLite, idempotency, claim lease, version, trạng thái và events |
-| lib/queue.mjs | Pool worker, timeout, heartbeat, hủy và shutdown |
-| lib/processors.mjs | Parser CSV và các phép biến đổi giới hạn tài nguyên |
-| lib/processor-worker.mjs | Chạy phép xử lý trong Worker Thread |
-| public | Dashboard, nhập tệp UTF-8, preview, download và nhật ký |
-| test | Kiểm thử domain, store, worker, HTTP và browser |
-| upstream | Mã MIT gốc để tham chiếu, không chạy trong runtime |
+| Tệp                      | Vai trò                                                         |
+| ------------------------ | --------------------------------------------------------------- |
+| server.mjs               | HTTP, session, CSRF/Origin/Host, API và static allowlist        |
+| lib/store.mjs            | SQLite, idempotency, claim lease, version, trạng thái và events |
+| lib/queue.mjs            | Pool worker, timeout, heartbeat, hủy và shutdown                |
+| lib/processors.mjs       | Parser CSV và các phép biến đổi giới hạn tài nguyên             |
+| lib/processor-worker.mjs | Chạy phép xử lý trong Worker Thread                             |
+| public                   | Dashboard, nhập tệp UTF-8, preview, download và nhật ký         |
+| test                     | Kiểm thử domain, store, worker, HTTP và browser                 |
+| upstream                 | Mã MIT gốc để tham chiếu, không chạy trong runtime              |
 
 ## Kiểm thử
 
-~~~bash
+```bash
 npm ci
 npm test
 npx playwright install --with-deps chromium
 npm run test:ui
-~~~
+```
 
 Kiểm tra gồm CSV quotes/newline và ô công thức, JSON shape/depth/prototype-like
 keys, thống kê Unicode, idempotency và tombstone, FIFO theo workspace, pause,
@@ -177,12 +177,12 @@ và kiểm tra layout 390 px. CI kiểm thử rồi lưu ảnh giao diện thậ
 
 ## Cấu hình và phạm vi
 
-| Biến | Mặc định |
-|---|---|
-| PORT | 3120 |
-| YANGQUEUE_BIND | 127.0.0.1 |
-| YANGQUEUE_DB | data/yangqueue.sqlite |
-| YANGQUEUE_ALLOWED_HOSTS | localhost,127.0.0.1 |
+| Biến                    | Mặc định                |
+| ----------------------- | ----------------------- |
+| PORT                    | 3120                    |
+| YANGQUEUE_BIND          | 127.0.0.1               |
+| YANGQUEUE_DB            | data/yangqueue.sqlite   |
+| YANGQUEUE_ALLOWED_HOSTS | localhost,127.0.0.1     |
 | YANGQUEUE_PUBLIC_ORIGIN | HTTP origin của request |
 | YANGQUEUE_SECURE_COOKIE | 0; đặt 1 khi dùng HTTPS |
 

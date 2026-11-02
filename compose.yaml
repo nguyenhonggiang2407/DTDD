@@ -2,7 +2,7 @@ services:
   yangqueue:
     build: .
     ports:
-      - "127.0.0.1:3120:3120"
+      - '127.0.0.1:3120:3120'
     volumes:
       - yangqueue-data:/app/data
     mem_limit: 512m

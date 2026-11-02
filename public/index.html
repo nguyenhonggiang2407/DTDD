@@ -1,15 +1,271 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#20273b"><title>YangQueue · Từ tác vụ đến kết quả</title><link rel="icon" href="/assets/favicon.svg"><link rel="stylesheet" href="/assets/styles.css"><script src="/assets/app.js" type="module"></script></head>
-<body><a class="skip" href="#main">Đến nội dung chính</a>
-<aside class="sidebar"><a class="brand" href="/"><img src="/assets/favicon.svg" alt=""><span>YangQueue<small>SMALL JOBS. RELIABLE STEPS.</small></span></a><div class="workspace"><span class="avatar">NG</span><span>Giang’s workspace<small>Không gian xử lý cá nhân</small></span></div><p class="nav-label">THEO DÕI CÔNG VIỆC</p><nav><button class="nav-item active" data-state=""><span>▤</span>Tất cả tác vụ <small id="nav-total">0</small></button><button class="nav-item" data-state="succeeded"><span>✓</span>Đã hoàn thành <small id="nav-success">0</small></button><button class="nav-item" data-state="failed"><span>◇</span>Cần kiểm tra <small id="nav-failed">0</small></button></nav><div class="side-note"><span>↳</span><strong>Có lỗi, vẫn rõ đường đi.</strong><p>Tác vụ có nhật ký từng bước. Dữ liệu sai dừng để bạn sửa; lỗi worker được thử lại trong giới hạn.</p></div><div class="side-bottom"><p><i></i>Workspace riêng theo trình duyệt</p><a href="https://github.com/nguyenhonggiang2407" target="_blank" rel="noopener noreferrer"><span class="avatar">NG</span><span>Nguyễn Hồng Giang<small>Backend / Full-stack · Yang</small></span><b>↗</b></a></div></aside>
-<div class="shell"><header class="topbar"><div>Workspace <span>/</span><strong>Hàng đợi tác vụ</strong></div><span class="local-note"><i></i>Lưu trên máy chủ của bạn</span></header>
-<main id="main"><div class="heading"><div><p class="eyebrow">LOCAL DATA PROCESSING / YANGQUEUE</p><h1>Đưa việc vào hàng đợi.<br><span>Theo dõi đến kết quả.</span></h1><p class="intro">Làm sạch CSV, chuyển JSON và thống kê văn bản. Mỗi lượt chạy đều có dấu vết.</p></div><div class="heading-actions"><button class="button subtle" id="load-demo">Thử dữ liệu mẫu ↗</button><button class="button primary" id="new-job">＋ Tạo tác vụ</button></div></div>
-<div class="queue-banner"><span class="status-dot" id="queue-dot"></span><div><strong id="queue-status">Đang kết nối workspace…</strong><small id="queue-description">Chuẩn bị hàng đợi của bạn.</small></div><button class="button small" id="toggle-queue" disabled>Tạm dừng</button></div>
-<div class="app-error" id="app-error" role="alert" hidden></div>
-<section class="stats" aria-label="Thống kê workspace"><div><span class="stat-icon">▤</span><strong id="stat-total">0</strong><small>Tổng tác vụ</small></div><div><span class="stat-icon blue">◷</span><strong id="stat-active">0</strong><small>Chưa kết thúc</small></div><div><span class="stat-icon green">✓</span><strong id="stat-success">0</strong><small>Đã có kết quả</small></div><div><span class="stat-icon amber">◇</span><strong id="stat-failed">0</strong><small>Cần kiểm tra</small></div></section>
-<div class="work-layout"><section class="jobs-section"><div class="section-heading"><div><h2>Tác vụ của bạn <span class="count" id="job-count">0</span></h2><p>Chọn một tác vụ để xem nhật ký và tải kết quả.</p></div><span id="sync-status" class="sync-status">Chưa cập nhật</span></div><div class="toolbar"><label class="search"><span aria-hidden="true">⌕</span><input id="search" aria-label="Tìm tác vụ" placeholder="Tìm tên hoặc mã tác vụ…" maxlength="120"></label><select id="state-filter" aria-label="Lọc trạng thái"><option value="">Tất cả trạng thái</option><option value="queued">Đang chờ</option><option value="running">Đang xử lý</option><option value="retry_wait">Chờ thử lại</option><option value="succeeded">Thành công</option><option value="failed">Lỗi</option><option value="cancelled">Đã hủy</option></select><button class="button small" id="refresh">↻ Tải lại</button></div><div class="list-heading"><span>TÁC VỤ</span><span>TRẠNG THÁI</span><span>LƯỢT THỬ</span><span>TẠO LÚC</span></div><div id="jobs" aria-live="polite"></div><p class="list-footer">Tối đa 50 tác vụ / workspace · 10 tác vụ chưa kết thúc</p></section>
-<aside class="guide"><p class="eyebrow">BA CÁCH XỬ LÝ</p><h2>Đầu vào gọn.<br>Đầu ra rõ.</h2><div><span>01</span><p><strong>Làm sạch CSV</strong>Bỏ dòng trống, chuẩn hóa khoảng trắng, loại dòng trùng.</p></div><div><span>02</span><p><strong>JSON → CSV</strong>Gom các thuộc tính thành cột, giữ giá trị thiếu rõ ràng.</p></div><div><span>03</span><p><strong>Thống kê văn bản</strong>Đếm từ, dòng và tần suất. Hỗ trợ văn bản tiếng Việt.</p></div><p class="guide-foot"><i></i>Tệp gốc không được giữ riêng. Nội dung xử lý nằm trong workspace.</p></aside></div><footer><span>YangQueue · A clear path from job to result.</span><span>Workspace 7 ngày · Xuất dữ liệu cần giữ lâu dài</span></footer></main></div>
-<dialog id="create-dialog" aria-labelledby="create-title"><div class="dialog-heading"><div><p class="eyebrow">THÊM MỘT LƯỢT XỬ LÝ</p><h2 id="create-title">Tạo tác vụ mới</h2></div><button class="icon-button" data-close="create-dialog" aria-label="Đóng tạo tác vụ">×</button></div><form id="job-form"><div class="form-grid"><label for="job-title">Tên tác vụ<input id="job-title" name="title" maxlength="120" required placeholder="Ví dụ: Làm sạch danh sách đồ dùng"></label><label for="job-type">Kiểu xử lý<select id="job-type" name="type"><option value="csv-clean">Làm sạch CSV</option><option value="json-csv">JSON → CSV</option><option value="text-stats">Thống kê văn bản</option></select></label></div><label class="file-picker" for="file-input"><span>↑ Chọn CSV, JSON hoặc TXT</span><small>Tối đa 256 KB · UTF-8</small><input id="file-input" type="file" accept=".csv,.json,.txt,.md"></label><label for="job-input">Nội dung đầu vào<textarea id="job-input" name="input" rows="8" required spellcheck="false" placeholder="name,group&#10;Sổ tay,Văn phòng&#10;Sổ tay,Văn phòng"></textarea></label><div class="input-info"><span id="input-size">0 B / 256 KB</span><button type="button" class="text-button" id="fill-example">Điền ví dụ phù hợp</button></div><div class="options" id="csv-options"><label><input type="checkbox" id="trim" checked> Bỏ khoảng trắng thừa</label><label><input type="checkbox" id="dedupe" checked> Loại dòng trùng</label></div><p id="submit-hint" class="hint"></p><p class="dialog-error" role="alert" hidden></p><div class="dialog-actions"><button type="button" class="button" data-close="create-dialog">Để sau</button><button class="button primary" id="submit-job" type="submit">Đưa vào hàng đợi ↗</button></div></form></dialog>
-<dialog id="job-dialog" class="wide" aria-labelledby="detail-title"><div class="dialog-heading"><div><p class="eyebrow" id="detail-type">TÁC VỤ</p><h2 id="detail-title">Chi tiết tác vụ</h2></div><button class="icon-button" data-close="job-dialog" aria-label="Đóng chi tiết">×</button></div><div class="detail-meta"><span id="detail-status"></span><span id="detail-id" class="mono"></span><span id="detail-attempt"></span></div><div class="detail-tools" id="detail-tools"></div><div id="detail-failure" class="failure-box" hidden></div><div id="result" hidden><div class="result-heading"><div><h3>Đầu ra đã sẵn sàng</h3><p id="result-info"></p></div><a id="download-result" class="button primary" download>↓ Tải kết quả</a></div><div id="result-summary" class="result-summary"></div><div id="result-preview" class="preview-wrap"></div><details class="checksum"><summary>Mã kiểm tra SHA-256</summary><code id="result-sha"></code></details></div><h3 class="timeline-title">Nhật ký lượt chạy</h3><div id="timeline" class="timeline"></div><details class="original-input"><summary>Xem nội dung đã gửi</summary><pre id="detail-input"></pre></details><p class="dialog-error" role="alert" hidden></p></dialog>
-<dialog id="confirm-dialog" class="small-dialog" aria-labelledby="confirm-title"><div class="dialog-heading"><h2 id="confirm-title">Xác nhận</h2><button class="icon-button" data-close="confirm-dialog" aria-label="Đóng xác nhận">×</button></div><p id="confirm-description" class="muted"></p><p class="dialog-error" role="alert" hidden></p><div class="dialog-actions"><button class="button" data-close="confirm-dialog">Giữ lại</button><button class="button danger" id="confirm-action">Xác nhận</button></div></dialog>
-<div id="toast" class="toast" role="status" aria-live="polite" hidden></div></body></html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#20273b" />
+    <title>YangQueue · Từ tác vụ đến kết quả</title>
+    <link rel="icon" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script src="/assets/app.js" type="module"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Đến nội dung chính</a>
+    <aside class="sidebar">
+      <a class="brand" href="/"
+        ><img src="/assets/favicon.svg" alt="" /><span
+          >YangQueue<small>SMALL JOBS. RELIABLE STEPS.</small></span
+        ></a
+      >
+      <div class="workspace">
+        <span class="avatar">NG</span
+        ><span>Giang’s workspace<small>Không gian xử lý cá nhân</small></span>
+      </div>
+      <p class="nav-label">THEO DÕI CÔNG VIỆC</p>
+      <nav>
+        <button class="nav-item active" data-state="">
+          <span>▤</span>Tất cả tác vụ <small id="nav-total">0</small></button
+        ><button class="nav-item" data-state="succeeded">
+          <span>✓</span>Đã hoàn thành <small id="nav-success">0</small></button
+        ><button class="nav-item" data-state="failed">
+          <span>◇</span>Cần kiểm tra <small id="nav-failed">0</small>
+        </button>
+      </nav>
+      <div class="side-note">
+        <span>↳</span><strong>Có lỗi, vẫn rõ đường đi.</strong>
+        <p>
+          Tác vụ có nhật ký từng bước. Dữ liệu sai dừng để bạn sửa; lỗi worker được thử lại trong
+          giới hạn.
+        </p>
+      </div>
+      <div class="side-bottom">
+        <p><i></i>Workspace riêng theo trình duyệt</p>
+        <a href="https://github.com/nguyenhonggiang2407" target="_blank" rel="noopener noreferrer"
+          ><span class="avatar">NG</span
+          ><span>Nguyễn Hồng Giang<small>Backend / Full-stack · Yang</small></span
+          ><b>↗</b></a
+        >
+      </div>
+    </aside>
+    <div class="shell">
+      <header class="topbar">
+        <div>Workspace <span>/</span><strong>Hàng đợi tác vụ</strong></div>
+        <span class="local-note"><i></i>Lưu trên máy chủ của bạn</span>
+      </header>
+      <main id="main">
+        <div class="heading">
+          <div>
+            <p class="eyebrow">LOCAL DATA PROCESSING / YANGQUEUE</p>
+            <h1>Đưa việc vào hàng đợi.<br /><span>Theo dõi đến kết quả.</span></h1>
+            <p class="intro">
+              Làm sạch CSV, chuyển JSON và thống kê văn bản. Mỗi lượt chạy đều có dấu vết.
+            </p>
+          </div>
+          <div class="heading-actions">
+            <button class="button subtle" id="load-demo">Thử dữ liệu mẫu ↗</button
+            ><button class="button primary" id="new-job">＋ Tạo tác vụ</button>
+          </div>
+        </div>
+        <div class="queue-banner">
+          <span class="status-dot" id="queue-dot"></span>
+          <div>
+            <strong id="queue-status">Đang kết nối workspace…</strong
+            ><small id="queue-description">Chuẩn bị hàng đợi của bạn.</small>
+          </div>
+          <button class="button small" id="toggle-queue" disabled>Tạm dừng</button>
+        </div>
+        <div class="app-error" id="app-error" role="alert" hidden></div>
+        <section class="stats" aria-label="Thống kê workspace">
+          <div>
+            <span class="stat-icon">▤</span><strong id="stat-total">0</strong
+            ><small>Tổng tác vụ</small>
+          </div>
+          <div>
+            <span class="stat-icon blue">◷</span><strong id="stat-active">0</strong
+            ><small>Chưa kết thúc</small>
+          </div>
+          <div>
+            <span class="stat-icon green">✓</span><strong id="stat-success">0</strong
+            ><small>Đã có kết quả</small>
+          </div>
+          <div>
+            <span class="stat-icon amber">◇</span><strong id="stat-failed">0</strong
+            ><small>Cần kiểm tra</small>
+          </div>
+        </section>
+        <div class="work-layout">
+          <section class="jobs-section">
+            <div class="section-heading">
+              <div>
+                <h2>Tác vụ của bạn <span class="count" id="job-count">0</span></h2>
+                <p>Chọn một tác vụ để xem nhật ký và tải kết quả.</p>
+              </div>
+              <span id="sync-status" class="sync-status">Chưa cập nhật</span>
+            </div>
+            <div class="toolbar">
+              <label class="search"
+                ><span aria-hidden="true">⌕</span
+                ><input
+                  id="search"
+                  aria-label="Tìm tác vụ"
+                  placeholder="Tìm tên hoặc mã tác vụ…"
+                  maxlength="120" /></label
+              ><select id="state-filter" aria-label="Lọc trạng thái">
+                <option value="">Tất cả trạng thái</option>
+                <option value="queued">Đang chờ</option>
+                <option value="running">Đang xử lý</option>
+                <option value="retry_wait">Chờ thử lại</option>
+                <option value="succeeded">Thành công</option>
+                <option value="failed">Lỗi</option>
+                <option value="cancelled">Đã hủy</option></select
+              ><button class="button small" id="refresh">↻ Tải lại</button>
+            </div>
+            <div class="list-heading">
+              <span>TÁC VỤ</span><span>TRẠNG THÁI</span><span>LƯỢT THỬ</span><span>TẠO LÚC</span>
+            </div>
+            <div id="jobs" aria-live="polite"></div>
+            <p class="list-footer">Tối đa 50 tác vụ / workspace · 10 tác vụ chưa kết thúc</p>
+          </section>
+          <aside class="guide">
+            <p class="eyebrow">BA CÁCH XỬ LÝ</p>
+            <h2>Đầu vào gọn.<br />Đầu ra rõ.</h2>
+            <div>
+              <span>01</span>
+              <p>
+                <strong>Làm sạch CSV</strong>Bỏ dòng trống, chuẩn hóa khoảng trắng, loại dòng trùng.
+              </p>
+            </div>
+            <div>
+              <span>02</span>
+              <p>
+                <strong>JSON → CSV</strong>Gom các thuộc tính thành cột, giữ giá trị thiếu rõ ràng.
+              </p>
+            </div>
+            <div>
+              <span>03</span>
+              <p>
+                <strong>Thống kê văn bản</strong>Đếm từ, dòng và tần suất. Hỗ trợ văn bản tiếng
+                Việt.
+              </p>
+            </div>
+            <p class="guide-foot">
+              <i></i>Tệp gốc không được giữ riêng. Nội dung xử lý nằm trong workspace.
+            </p>
+          </aside>
+        </div>
+        <footer>
+          <span>YangQueue · A clear path from job to result.</span
+          ><span>Workspace 7 ngày · Xuất dữ liệu cần giữ lâu dài</span>
+        </footer>
+      </main>
+    </div>
+    <dialog id="create-dialog" aria-labelledby="create-title">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">THÊM MỘT LƯỢT XỬ LÝ</p>
+          <h2 id="create-title">Tạo tác vụ mới</h2>
+        </div>
+        <button class="icon-button" data-close="create-dialog" aria-label="Đóng tạo tác vụ">
+          ×
+        </button>
+      </div>
+      <form id="job-form">
+        <div class="form-grid">
+          <label for="job-title"
+            >Tên tác vụ<input
+              id="job-title"
+              name="title"
+              maxlength="120"
+              required
+              placeholder="Ví dụ: Làm sạch danh sách đồ dùng" /></label
+          ><label for="job-type"
+            >Kiểu xử lý<select id="job-type" name="type">
+              <option value="csv-clean">Làm sạch CSV</option>
+              <option value="json-csv">JSON → CSV</option>
+              <option value="text-stats">Thống kê văn bản</option>
+            </select></label
+          >
+        </div>
+        <label class="file-picker" for="file-input"
+          ><span>↑ Chọn CSV, JSON hoặc TXT</span><small>Tối đa 256 KB · UTF-8</small
+          ><input id="file-input" type="file" accept=".csv,.json,.txt,.md" /></label
+        ><label for="job-input"
+          >Nội dung đầu vào<textarea
+            id="job-input"
+            name="input"
+            rows="8"
+            required
+            spellcheck="false"
+            placeholder="name,group&#10;Sổ tay,Văn phòng&#10;Sổ tay,Văn phòng"
+          ></textarea>
+        </label>
+        <div class="input-info">
+          <span id="input-size">0 B / 256 KB</span
+          ><button type="button" class="text-button" id="fill-example">Điền ví dụ phù hợp</button>
+        </div>
+        <div class="options" id="csv-options">
+          <label><input type="checkbox" id="trim" checked /> Bỏ khoảng trắng thừa</label
+          ><label><input type="checkbox" id="dedupe" checked /> Loại dòng trùng</label>
+        </div>
+        <p id="submit-hint" class="hint"></p>
+        <p class="dialog-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button type="button" class="button" data-close="create-dialog">Để sau</button
+          ><button class="button primary" id="submit-job" type="submit">Đưa vào hàng đợi ↗</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="job-dialog" class="wide" aria-labelledby="detail-title">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow" id="detail-type">TÁC VỤ</p>
+          <h2 id="detail-title">Chi tiết tác vụ</h2>
+        </div>
+        <button class="icon-button" data-close="job-dialog" aria-label="Đóng chi tiết">×</button>
+      </div>
+      <div class="detail-meta">
+        <span id="detail-status"></span><span id="detail-id" class="mono"></span
+        ><span id="detail-attempt"></span>
+      </div>
+      <div class="detail-tools" id="detail-tools"></div>
+      <div id="detail-failure" class="failure-box" hidden></div>
+      <div id="result" hidden>
+        <div class="result-heading">
+          <div>
+            <h3>Đầu ra đã sẵn sàng</h3>
+            <p id="result-info"></p>
+          </div>
+          <a id="download-result" class="button primary" download>↓ Tải kết quả</a>
+        </div>
+        <div id="result-summary" class="result-summary"></div>
+        <div id="result-preview" class="preview-wrap"></div>
+        <details class="checksum">
+          <summary>Mã kiểm tra SHA-256</summary>
+          <code id="result-sha"></code>
+        </details>
+      </div>
+      <h3 class="timeline-title">Nhật ký lượt chạy</h3>
+      <div id="timeline" class="timeline"></div>
+      <details class="original-input">
+        <summary>Xem nội dung đã gửi</summary>
+        <pre id="detail-input"></pre>
+      </details>
+      <p class="dialog-error" role="alert" hidden></p>
+    </dialog>
+    <dialog id="confirm-dialog" class="small-dialog" aria-labelledby="confirm-title">
+      <div class="dialog-heading">
+        <h2 id="confirm-title">Xác nhận</h2>
+        <button class="icon-button" data-close="confirm-dialog" aria-label="Đóng xác nhận">
+          ×
+        </button>
+      </div>
+      <p id="confirm-description" class="muted"></p>
+      <p class="dialog-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button class="button" data-close="confirm-dialog">Giữ lại</button
+        ><button class="button danger" id="confirm-action">Xác nhận</button>
+      </div>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>
