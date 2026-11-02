@@ -12,20 +12,20 @@
 
 ## Chạy thử
 
-~~~sh
+```sh
 git clone --branch yangdata --single-branch https://github.com/nguyenhonggiang2407/DTDD.git yangdata
 cd yangdata
 npm ci
 npm start
-~~~
+```
 
 Mở **http://127.0.0.1:3130**. Chọn **Thử dữ liệu mẫu** để nhập 12 đơn hàng giả lập. Thử lọc Trạng thái = Hoàn thành, SUM Doanh thu, nhóm theo Khu vực và sắp xếp giảm dần. Kết quả là Hà Nội 1.090.000, Hồ Chí Minh 990.000 và Đà Nẵng 630.000.
 
 Hoặc dùng container:
 
-~~~sh
+```sh
 docker compose up --build
-~~~
+```
 
 Cổng chỉ được công bố trên 127.0.0.1. Named volume giữ SQLite khi container khởi động lại. Container chạy bằng user node và có health check.
 
@@ -44,17 +44,17 @@ Không gửi dữ liệu tới API bên ngoài. Source Python trong upstream/ ch
 
 ## Giới hạn & hành vi dữ liệu
 
-| Mục | Giới hạn / hành vi |
-| --- | --- |
-| CSV | 512 KiB, 5.000 dòng dữ liệu, 30 cột, 2.000 ký tự mỗi ô |
-| HTTP JSON | 1 MiB, UTF-8 hợp lệ; không nhận body nén |
-| Workspace | 5 tập dữ liệu, 20 báo cáo, phiên cố định 7 ngày |
-| Truy vấn | 8 điều kiện AND, 1–500 dòng/trang, offset 0–5.000 |
-| Số | SQLite REAL: số thực gần đúng; không dùng cho kế toán cần độ chính xác tuyệt đối |
-| So sánh chuỗi | NFC, so sánh theo SQLite; LIKE mặc định chỉ không phân biệt hoa/thường ASCII |
-| NULL | Ô trống và chuỗi chỉ gồm khoảng trắng được lưu NULL; lọc NULL bằng toán tử riêng |
-| CSV xuất | NULL thành ô trống; chuỗi có dấu công thức được thêm dấu nháy đơn |
-| Dọn dữ liệu | Dọn phiên hết hạn khi khởi động, tạo workspace hoặc gặp cookie đã hết hạn |
+| Mục           | Giới hạn / hành vi                                                               |
+| ------------- | -------------------------------------------------------------------------------- |
+| CSV           | 512 KiB, 5.000 dòng dữ liệu, 30 cột, 2.000 ký tự mỗi ô                           |
+| HTTP JSON     | 1 MiB, UTF-8 hợp lệ; không nhận body nén                                         |
+| Workspace     | 5 tập dữ liệu, 20 báo cáo, phiên cố định 7 ngày                                  |
+| Truy vấn      | 8 điều kiện AND, 1–500 dòng/trang, offset 0–5.000                                |
+| Số            | SQLite REAL: số thực gần đúng; không dùng cho kế toán cần độ chính xác tuyệt đối |
+| So sánh chuỗi | NFC, so sánh theo SQLite; LIKE mặc định chỉ không phân biệt hoa/thường ASCII     |
+| NULL          | Ô trống và chuỗi chỉ gồm khoảng trắng được lưu NULL; lọc NULL bằng toán tử riêng |
+| CSV xuất      | NULL thành ô trống; chuỗi có dấu công thức được thêm dấu nháy đơn                |
+| Dọn dữ liệu   | Dọn phiên hết hạn khi khởi động, tạo workspace hoặc gặp cookie đã hết hạn        |
 
 Không hỗ trợ sửa từng ô, JOIN, OR, SQL tự do, truy vấn ngôn ngữ tự nhiên hay chia sẻ dữ liệu công khai. Các tập dữ liệu chỉ có chỉ mục khóa dòng; EXPLAIN có thể hiển thị quét bảng hoặc B-tree tạm khi tổng hợp/sắp xếp. Mỗi phép nhập/query được giới hạn bởi các quota trên.
 
@@ -62,28 +62,28 @@ Phiên gắn với cookie trình duyệt. Xóa cookie hoặc hết bảy ngày s
 
 ## Cấu hình máy chủ
 
-| Biến | Mặc định |
-| --- | --- |
-| PORT | 3130 |
-| YANGDATA_BIND | 127.0.0.1; container dùng 0.0.0.0 |
-| YANGDATA_DB | data/yangdata.sqlite |
-| YANGDATA_ALLOWED_HOSTS | localhost,127.0.0.1 |
+| Biến                   | Mặc định                                                 |
+| ---------------------- | -------------------------------------------------------- |
+| PORT                   | 3130                                                     |
+| YANGDATA_BIND          | 127.0.0.1; container dùng 0.0.0.0                        |
+| YANGDATA_DB            | data/yangdata.sqlite                                     |
+| YANGDATA_ALLOWED_HOSTS | localhost,127.0.0.1                                      |
 | YANGDATA_PUBLIC_ORIGIN | http:// + Host, hoặc origin HTTPS thật khi đặt sau proxy |
-| YANGDATA_SECURE_COOKIE | 0; đặt 1 khi chạy HTTPS |
+| YANGDATA_SECURE_COOKIE | 0; đặt 1 khi chạy HTTPS                                  |
 
 Khi đặt sau reverse proxy, khai báo chính xác host và origin, bật cookie Secure và chỉ mở qua HTTPS. Không đưa thư mục data/ vào máy chủ tệp tĩnh. Cơ sở dữ liệu chứa CSV đã nhập ở dạng đọc được; không có mã hóa dữ liệu tại ổ đĩa.
 
 ## Kiến trúc
 
-| Thành phần | Trách nhiệm |
-| --- | --- |
-| server.mjs | HTTP, phiên, CSRF/Origin/Host, body limit, static allowlist, API và downloads |
-| lib/datasets.mjs + lib/csv.mjs | Parse, validate, infer/override kiểu, checksum và CSV export |
-| lib/query.mjs | Biên dịch grammar được phép thành SELECT + bind parameters |
-| lib/store.mjs | SQLite, bảng riêng từng dataset, owner scope, transaction và optimistic version |
-| public/ | Giao diện tiếng Việt, DOM textContent, builder, bảng kết quả và báo cáo |
-| test/ | Kiểm thử dữ liệu, SQL injection, vòng đời, HTTP và luồng trình duyệt |
-| upstream/ | Mã tham chiếu MIT được giữ nguyên; không thực thi |
+| Thành phần                     | Trách nhiệm                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------- |
+| server.mjs                     | HTTP, phiên, CSRF/Origin/Host, body limit, static allowlist, API và downloads   |
+| lib/datasets.mjs + lib/csv.mjs | Parse, validate, infer/override kiểu, checksum và CSV export                    |
+| lib/query.mjs                  | Biên dịch grammar được phép thành SELECT + bind parameters                      |
+| lib/store.mjs                  | SQLite, bảng riêng từng dataset, owner scope, transaction và optimistic version |
+| public/                        | Giao diện tiếng Việt, DOM textContent, builder, bảng kết quả và báo cáo         |
+| test/                          | Kiểm thử dữ liệu, SQL injection, vòng đời, HTTP và luồng trình duyệt            |
+| upstream/                      | Mã tham chiếu MIT được giữ nguyên; không thực thi                               |
 
 SQLite dùng WAL, foreign keys và busy timeout. Nhập dữ liệu, tạo bảng/metadata cùng transaction; xóa dữ liệu và dọn phiên cũng drop bảng vật lý cùng cascade metadata. Phiên và quyền sở hữu được kiểm tra trước khi biên dịch bất cứ truy vấn nào.
 
@@ -91,46 +91,46 @@ SQLite dùng WAL, foreign keys và busy timeout. Nhập dữ liệu, tạo bản
 
 Tất cả API dữ liệu cần cookie từ GET /api/workspace. Mọi POST/PATCH/PUT/DELETE cần X-CSRF-Token và Origin hợp lệ nếu gửi Origin. Không có endpoint chạy SQL tùy ý.
 
-| Endpoint | Hành vi |
-| --- | --- |
-| GET /health | Kiểm tra tiến trình và kết nối SQLite |
-| GET /api/workspace | Bootstrap phiên riêng, CSRF và giới hạn |
-| POST /api/inspect | Kiểm tra CSV, xem schema và năm dòng; không lưu |
-| GET /api/datasets?q= | Danh sách của workspace; tìm tên không dấu |
-| POST /api/datasets | Nhập; 201 mới, 200 nếu nội dung đã tồn tại |
-| GET/PATCH/DELETE /api/datasets/:id | Xem / đổi tên / xóa; mutation cần version |
-| GET /api/datasets/:id/export | Xuất toàn bộ dữ liệu thuộc workspace |
-| POST /api/query | Chạy grammar truy vấn được giới hạn |
-| POST /api/query/export | Xuất đúng trang của truy vấn |
-| GET/POST /api/reports | Danh sách / tạo báo cáo |
-| GET/PUT/DELETE /api/reports/:id | Xem / cập nhật / xóa; update/delete cần version |
-| POST /api/reports/:id/run | Chạy cấu hình đã lưu |
-| POST /api/reports/:id/export | Xuất trang đầu theo cấu hình đã lưu |
-| POST /api/demo | Nhập bộ mẫu trong workspace; nhập lại không nhân đôi |
+| Endpoint                           | Hành vi                                              |
+| ---------------------------------- | ---------------------------------------------------- |
+| GET /health                        | Kiểm tra tiến trình và kết nối SQLite                |
+| GET /api/workspace                 | Bootstrap phiên riêng, CSRF và giới hạn              |
+| POST /api/inspect                  | Kiểm tra CSV, xem schema và năm dòng; không lưu      |
+| GET /api/datasets?q=               | Danh sách của workspace; tìm tên không dấu           |
+| POST /api/datasets                 | Nhập; 201 mới, 200 nếu nội dung đã tồn tại           |
+| GET/PATCH/DELETE /api/datasets/:id | Xem / đổi tên / xóa; mutation cần version            |
+| GET /api/datasets/:id/export       | Xuất toàn bộ dữ liệu thuộc workspace                 |
+| POST /api/query                    | Chạy grammar truy vấn được giới hạn                  |
+| POST /api/query/export             | Xuất đúng trang của truy vấn                         |
+| GET/POST /api/reports              | Danh sách / tạo báo cáo                              |
+| GET/PUT/DELETE /api/reports/:id    | Xem / cập nhật / xóa; update/delete cần version      |
+| POST /api/reports/:id/run          | Chạy cấu hình đã lưu                                 |
+| POST /api/reports/:id/export       | Xuất trang đầu theo cấu hình đã lưu                  |
+| POST /api/demo                     | Nhập bộ mẫu trong workspace; nhập lại không nhân đôi |
 
 Ví dụ body query; thay datasetId bằng ID do API cấp:
 
-~~~json
+```json
 {
   "datasetId": "ID_FROM_IMPORT",
-  "filters": [{"column": "c5", "op": "eq", "value": "Hoàn thành"}],
+  "filters": [{ "column": "c5", "op": "eq", "value": "Hoàn thành" }],
   "groupBy": "c1",
-  "aggregate": {"fn": "sum", "column": "c3"},
+  "aggregate": { "fn": "sum", "column": "c3" },
   "orderBy": "value",
   "direction": "desc",
   "limit": 50,
   "offset": 0
 }
-~~~
+```
 
 ## Kiểm thử
 
-~~~sh
+```sh
 npm test
 npx playwright install --with-deps chromium
 npm run test:ui
 npm run format:check
-~~~
+```
 
 CI cài dependency theo lockfile, định dạng mã, chạy bộ test backend và browser, chụp giao diện thật, build image rồi chạy container để kiểm tra /health. Khi tất cả thành công, bot lưu mã đã định dạng và ảnh chụp vào nhánh này. Workflow không được bot tự sửa.
 

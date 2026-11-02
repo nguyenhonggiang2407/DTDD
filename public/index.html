@@ -1,64 +1,410 @@
 <!doctype html>
 <html lang="vi">
-<head>
- <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
- <meta name="theme-color" content="#143c35">
- <title>YangData — Từ dữ liệu đến câu trả lời</title>
- <link rel="icon" href="/assets/favicon.svg"><link rel="stylesheet" href="/assets/styles.css">
- <script type="module" src="/assets/app.js"></script>
-</head>
-<body>
-<a class="skip" href="#main">Đến nội dung</a>
-<div class="app-shell">
- <aside class="sidebar">
-  <a class="brand" href="/" aria-label="YangData trang chủ"><span class="brand-icon" aria-hidden="true">▥</span><span>Yang<span class="brand-light">Data</span><small>SMALL DATA. CLEAR ANSWERS.</small></span></a>
-  <div class="workspace-label"><span class="avatar">NG</span><div><strong>Giang’s workspace</strong><small>Không gian dữ liệu cá nhân</small></div><span class="workspace-dot" aria-hidden="true"></span></div>
-  <nav class="main-nav" aria-label="Điều hướng"><button class="nav-item active" data-view="explore"><span aria-hidden="true">▦</span> Khám phá dữ liệu <span class="nav-count" id="datasetCount">0</span></button><button class="nav-item" data-view="reports"><span aria-hidden="true">▤</span> Báo cáo đã lưu <span class="nav-count" id="reportCount">0</span></button></nav>
-  <section class="dataset-nav"><div class="eyebrow side-heading">TẬP DỮ LIỆU <button class="icon-btn" data-import aria-label="Nhập tập dữ liệu mới">＋</button></div><div id="datasetList"><p class="side-muted">Chưa có tập dữ liệu.</p></div></section>
-  <div class="side-note"><span class="note-icon" aria-hidden="true">↳</span><strong>Từ một tệp CSV,<br>đến một góc nhìn mới.</strong><p>Chọn điều kiện, xem SQL thật và giữ lại báo cáo cần dùng.</p><span class="local-label">● SQLite trên máy chủ của bạn</span></div>
-  <footer class="side-footer"><span class="avatar">NG</span><div><strong>Nguyễn Hồng Giang</strong><small>Backend / Full-stack · Yang</small></div><a href="https://github.com/nguyenhonggiang2407" aria-label="GitHub của Nguyễn Hồng Giang">↗</a></footer>
- </aside>
- <div class="main-wrap">
-  <header class="topbar"><div>Workspace <span>/</span> <strong id="breadcrumb">Khám phá dữ liệu</strong></div><span class="private-badge">● Phiên riêng · 7 ngày</span></header>
-  <main id="main">
-   <div id="sessionExpired" class="error-banner" hidden>Workspace đã hết hạn. <button id="reloadSession">Tải lại trang</button></div>
-   <section id="exploreView">
-    <div class="page-heading"><div><div class="eyebrow">CSV → SQL → INSIGHT</div><h1>Dữ liệu gọn.<br><span>Góc nhìn rõ.</span></h1><p>Nhập một bảng CSV. Lọc, tổng hợp và lưu điều bạn tìm thấy.</p></div><div class="heading-actions"><button class="button ghost" id="demoBtn">Thử dữ liệu mẫu ↗</button><button class="button primary" data-import>＋ Nhập CSV</button></div></div>
-    <div class="stats-strip"><div><span class="stat-icon">▦</span><div><strong id="statDatasets">0</strong><small>Tập dữ liệu</small></div></div><div><span class="stat-icon mint">≋</span><div><strong id="statRows">0</strong><small>Dòng đã nhập</small></div></div><div><span class="stat-icon lilac">⌗</span><div><strong id="statColumns">0</strong><small>Cột đang khám phá</small></div></div><div><span class="stat-icon peach">▤</span><div><strong id="statReports">0</strong><small>Báo cáo đã lưu</small></div></div></div>
-    <section class="empty-state" id="emptyState"><div class="empty-art" aria-hidden="true"><span>01</span><div>↥</div><span>CSV</span></div><h2>Bắt đầu từ bảng dữ liệu của bạn</h2><p>CSV UTF-8, tối đa 512 KB · 5.000 dòng · 30 cột.<br>Hoặc khám phá bộ đơn hàng mẫu, hoàn toàn giả lập.</p><button class="button primary" data-import>Chọn tệp CSV</button><div class="empty-steps"><span><b>01</b> Nhập & xem kiểu cột</span><span><b>02</b> Đặt điều kiện</span><span><b>03</b> Giữ lại báo cáo</span></div></section>
-    <section id="workbench" hidden><label class="dataset-switch">Chọn tập dữ liệu<select id="datasetSelect"></select></label>
-     <div class="dataset-toolbar"><div><div class="eyebrow">ĐANG KHÁM PHÁ</div><h2 id="datasetTitle"></h2><p id="datasetMeta"></p></div><div class="toolbar-actions"><button class="button small ghost" id="renameDatasetBtn">Đổi tên</button><button class="button small outline" id="exportDatasetBtn">↓ CSV gốc</button><button class="icon-btn danger-text" id="deleteDatasetBtn" aria-label="Xóa tập dữ liệu">×</button></div></div>
-     <div class="workbench-grid">
-      <section class="builder card" aria-labelledby="builderTitle">
-       <div class="card-heading"><span class="step-badge">01</span><div><h3 id="builderTitle">Thiết kế truy vấn</h3><p>Chọn điều bạn muốn nhìn thấy.</p></div><button class="text-btn" id="resetBtn">Đặt lại</button></div>
-       <details class="builder-section" id="columnsSection" open><summary>Cột hiển thị <span id="selectedColumnsCount"></span></summary><div class="column-checks" id="columnChecks"></div></details>
-       <section class="builder-section"><div class="section-title"><h4>Điều kiện <span class="muted">AND</span></h4><button class="text-btn" id="addFilterBtn">＋ Thêm</button></div><div id="filterRows"></div><p class="help" id="filterEmpty">Chưa lọc — sử dụng mọi dòng.</p></section>
-       <section class="builder-section"><h4>Tổng hợp & nhóm</h4><label>Phép tính<select id="aggregateFn"><option value="">Không tổng hợp</option><option value="count">COUNT — đếm</option><option value="sum">SUM — tổng</option><option value="avg">AVG — trung bình</option><option value="min">MIN — nhỏ nhất</option><option value="max">MAX — lớn nhất</option></select></label><label>Cột tính toán<select id="aggregateColumn" disabled></select></label><label>Nhóm theo<select id="groupBy" disabled></select></label></section>
-       <section class="builder-section"><div class="two-fields"><label>Sắp xếp<select id="orderBy"></select></label><label>Chiều<select id="direction"><option value="asc">Tăng dần ↑</option><option value="desc">Giảm dần ↓</option></select></label></div><label>Số dòng / trang<select id="pageSize"><option value="25">25 dòng</option><option value="50" selected>50 dòng</option><option value="100">100 dòng</option><option value="500">500 dòng</option></select></label></section>
-       <div class="builder-bottom"><button class="button primary wide" id="runBtn">▷ Chạy truy vấn</button><p class="help">Giá trị lọc được truyền bằng tham số SQL.</p></div>
-      </section>
-      <section class="result-card card" aria-labelledby="resultTitle">
-       <div class="result-heading"><div><div class="eyebrow">02 / KẾT QUẢ</div><h3 id="resultTitle">Bảng dữ liệu</h3><p id="resultMeta">Chạy truy vấn để xem kết quả.</p></div><span class="result-tag" id="resultTag">SQLITE</span></div>
-       <div id="reportContext" class="report-context" hidden><span id="reportContextText"></span><button class="text-btn" id="leaveReportBtn">Thoát chỉnh sửa</button></div>
-       <p class="dirty-note" id="dirtyNote" hidden>Cấu hình đã thay đổi. Chạy lại để cập nhật kết quả và báo cáo.</p>
-       <div id="insight" class="insight" hidden><div class="eyebrow">GÓC NHÌN NHANH</div><h4 id="insightTitle"></h4><div id="insightBars"></div><p class="help">Tối đa 8 nhóm của trang kết quả hiện tại.</p></div>
-       <div class="table-scroll" tabindex="0" role="region" aria-label="Kết quả truy vấn"><table id="resultTable"><thead></thead><tbody></tbody></table><p id="noRows" class="no-rows" hidden>Không có dòng khớp điều kiện.</p></div>
-       <div class="result-pagination"><span id="pageLabel">Chưa có kết quả</span><div><button class="button small outline" id="prevPage" disabled>← Trước</button><button class="button small outline" id="nextPage" disabled>Sau →</button></div></div>
-       <div class="result-actions"><span id="saveHint">Giữ lại góc nhìn này</span><div><button class="button small outline" id="exportQueryBtn" disabled>↓ Xuất trang CSV</button><button class="button small primary" id="saveReportBtn" disabled>▤ Lưu báo cáo</button></div></div>
-       <details class="sql-details" id="sqlDetails"><summary>SQL & kế hoạch thực thi <span>Tham số tách khỏi câu lệnh</span></summary><pre id="sqlText"></pre><h4>Tham số ràng buộc</h4><pre id="paramsText"></pre><h4>EXPLAIN QUERY PLAN</h4><ul id="queryPlan"></ul></details>
-      </section>
-     </div>
-     <p class="data-footnote">Ô trống được lưu là NULL. Cột số dùng SQLite REAL. CSV xuất có bảo vệ chuỗi bắt đầu bằng công thức.</p>
-    </section>
-   </section>
-   <section id="reportsView" hidden><div class="page-heading"><div><div class="eyebrow">SAVED PERSPECTIVES</div><h1>Giữ lại<br><span>điều có ích.</span></h1><p>Báo cáo lưu cấu hình truy vấn để chạy lại trên tập dữ liệu đã nhập.</p></div><button class="button outline" id="backToExplore">← Khám phá dữ liệu</button></div><div id="reportList" class="report-grid"></div></section>
-   <footer class="page-footer"><span>YangData · A little structure, a clearer picture.</span><span>Dữ liệu lưu theo phiên trình duyệt · Xuất tệp để giữ lâu dài</span></footer>
-  </main>
- </div>
-</div>
-<dialog id="importDialog" class="modal import-modal"><form id="importForm"><div class="modal-heading"><div><div class="eyebrow">THÊM NGUỒN DỮ LIỆU</div><h2>Nhập bảng CSV</h2></div><button type="button" class="icon-btn" data-close="importDialog" aria-label="Đóng nhập CSV">×</button></div><p class="modal-intro">Kiểm tra cột và kiểu dữ liệu trước khi lưu. Tệp nằm trên máy chủ của bạn.</p><label>Tên tập dữ liệu<input id="importName" maxlength="120" required placeholder="Ví dụ: Đơn hàng tháng 11"></label><label class="file-picker">Chọn tệp CSV UTF-8<input id="csvFile" type="file" accept=".csv,text/csv"></label><label>Hoặc dán nội dung CSV<textarea id="csvInput" rows="6" spellcheck="false" placeholder="Mã đơn,Khu vực,Doanh thu&#10;001,Hà Nội,245000" required></textarea></label><div class="import-tools"><span class="help" id="csvSize">Tối đa 512 KB · 5.000 dòng · 30 cột</span><button type="button" class="button small outline" id="inspectBtn">Kiểm tra dữ liệu</button></div><p class="form-error" id="importError" role="alert" hidden></p><section id="importPreview" hidden><div class="section-title"><h3>Xem trước & kiểu cột</h3><span class="help" id="previewMeta"></span></div><p class="help">Mã có số 0 đầu được giữ là văn bản. Ô trống → NULL.</p><div id="importTypes" class="import-types"></div><div class="table-scroll preview-scroll"><table id="previewTable"><thead></thead><tbody></tbody></table></div></section><div class="modal-actions"><button type="button" class="button outline" data-close="importDialog">Hủy</button><button type="submit" class="button primary" id="importSubmit" disabled>Lưu tập dữ liệu</button></div></form></dialog>
-<dialog id="reportDialog" class="modal"><form id="reportForm"><div class="modal-heading"><h2 id="reportDialogTitle">Lưu báo cáo</h2><button type="button" class="icon-btn" data-close="reportDialog" aria-label="Đóng lưu báo cáo">×</button></div><p class="modal-intro">Lưu cấu hình của kết quả hiện tại. Khi mở lại, truy vấn bắt đầu từ trang đầu.</p><label>Tên báo cáo<input id="reportName" required maxlength="120"></label><label class="checkbox-label" id="saveAsLabel" hidden><input id="saveAsNew" type="checkbox"> Lưu thành báo cáo mới</label><p class="form-error" id="reportError" role="alert" hidden></p><div class="modal-actions"><button type="button" class="button outline" data-close="reportDialog">Hủy</button><button class="button primary" id="reportSubmit">Lưu báo cáo</button></div></form></dialog>
-<dialog id="renameDialog" class="modal"><form id="renameForm"><div class="modal-heading"><h2>Đổi tên tập dữ liệu</h2><button type="button" class="icon-btn" data-close="renameDialog" aria-label="Đóng đổi tên">×</button></div><label>Tên mới<input id="renameName" required maxlength="120"></label><p class="form-error" id="renameError" role="alert" hidden></p><div class="modal-actions"><button type="button" class="button outline" data-close="renameDialog">Hủy</button><button class="button primary" id="renameSubmit">Lưu tên</button></div></form></dialog>
-<dialog id="confirmDialog" class="modal"><div class="modal-heading"><h2 id="confirmTitle">Xác nhận xóa</h2><button class="icon-btn" data-close="confirmDialog" aria-label="Đóng xác nhận">×</button></div><p id="confirmText"></p><p id="confirmError" class="form-error" role="alert" hidden></p><div class="modal-actions"><button class="button outline" data-close="confirmDialog">Giữ lại</button><button class="button danger" id="confirmSubmit">Xóa</button></div></dialog>
-<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-</body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#143c35" />
+    <title>YangData — Từ dữ liệu đến câu trả lời</title>
+    <link rel="icon" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="/assets/app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Đến nội dung</a>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="/" aria-label="YangData trang chủ"
+          ><span class="brand-icon" aria-hidden="true">▥</span
+          ><span
+            >Yang<span class="brand-light">Data</span
+            ><small>SMALL DATA. CLEAR ANSWERS.</small></span
+          ></a
+        >
+        <div class="workspace-label">
+          <span class="avatar">NG</span>
+          <div><strong>Giang’s workspace</strong><small>Không gian dữ liệu cá nhân</small></div>
+          <span class="workspace-dot" aria-hidden="true"></span>
+        </div>
+        <nav class="main-nav" aria-label="Điều hướng">
+          <button class="nav-item active" data-view="explore">
+            <span aria-hidden="true">▦</span> Khám phá dữ liệu
+            <span class="nav-count" id="datasetCount">0</span></button
+          ><button class="nav-item" data-view="reports">
+            <span aria-hidden="true">▤</span> Báo cáo đã lưu
+            <span class="nav-count" id="reportCount">0</span>
+          </button>
+        </nav>
+        <section class="dataset-nav">
+          <div class="eyebrow side-heading">
+            TẬP DỮ LIỆU
+            <button class="icon-btn" data-import aria-label="Nhập tập dữ liệu mới">＋</button>
+          </div>
+          <div id="datasetList"><p class="side-muted">Chưa có tập dữ liệu.</p></div>
+        </section>
+        <div class="side-note">
+          <span class="note-icon" aria-hidden="true">↳</span
+          ><strong>Từ một tệp CSV,<br />đến một góc nhìn mới.</strong>
+          <p>Chọn điều kiện, xem SQL thật và giữ lại báo cáo cần dùng.</p>
+          <span class="local-label">● SQLite trên máy chủ của bạn</span>
+        </div>
+        <footer class="side-footer">
+          <span class="avatar">NG</span>
+          <div><strong>Nguyễn Hồng Giang</strong><small>Backend / Full-stack · Yang</small></div>
+          <a href="https://github.com/nguyenhonggiang2407" aria-label="GitHub của Nguyễn Hồng Giang"
+            >↗</a
+          >
+        </footer>
+      </aside>
+      <div class="main-wrap">
+        <header class="topbar">
+          <div>Workspace <span>/</span> <strong id="breadcrumb">Khám phá dữ liệu</strong></div>
+          <span class="private-badge">● Phiên riêng · 7 ngày</span>
+        </header>
+        <main id="main">
+          <div id="sessionExpired" class="error-banner" hidden>
+            Workspace đã hết hạn. <button id="reloadSession">Tải lại trang</button>
+          </div>
+          <section id="exploreView">
+            <div class="page-heading">
+              <div>
+                <div class="eyebrow">CSV → SQL → INSIGHT</div>
+                <h1>Dữ liệu gọn.<br /><span>Góc nhìn rõ.</span></h1>
+                <p>Nhập một bảng CSV. Lọc, tổng hợp và lưu điều bạn tìm thấy.</p>
+              </div>
+              <div class="heading-actions">
+                <button class="button ghost" id="demoBtn">Thử dữ liệu mẫu ↗</button
+                ><button class="button primary" data-import>＋ Nhập CSV</button>
+              </div>
+            </div>
+            <div class="stats-strip">
+              <div>
+                <span class="stat-icon">▦</span>
+                <div><strong id="statDatasets">0</strong><small>Tập dữ liệu</small></div>
+              </div>
+              <div>
+                <span class="stat-icon mint">≋</span>
+                <div><strong id="statRows">0</strong><small>Dòng đã nhập</small></div>
+              </div>
+              <div>
+                <span class="stat-icon lilac">⌗</span>
+                <div><strong id="statColumns">0</strong><small>Cột đang khám phá</small></div>
+              </div>
+              <div>
+                <span class="stat-icon peach">▤</span>
+                <div><strong id="statReports">0</strong><small>Báo cáo đã lưu</small></div>
+              </div>
+            </div>
+            <section class="empty-state" id="emptyState">
+              <div class="empty-art" aria-hidden="true">
+                <span>01</span>
+                <div>↥</div>
+                <span>CSV</span>
+              </div>
+              <h2>Bắt đầu từ bảng dữ liệu của bạn</h2>
+              <p>
+                CSV UTF-8, tối đa 512 KB · 5.000 dòng · 30 cột.<br />Hoặc khám phá bộ đơn hàng mẫu,
+                hoàn toàn giả lập.
+              </p>
+              <button class="button primary" data-import>Chọn tệp CSV</button>
+              <div class="empty-steps">
+                <span><b>01</b> Nhập & xem kiểu cột</span><span><b>02</b> Đặt điều kiện</span
+                ><span><b>03</b> Giữ lại báo cáo</span>
+              </div>
+            </section>
+            <section id="workbench" hidden>
+              <label class="dataset-switch"
+                >Chọn tập dữ liệu<select id="datasetSelect"></select
+              ></label>
+              <div class="dataset-toolbar">
+                <div>
+                  <div class="eyebrow">ĐANG KHÁM PHÁ</div>
+                  <h2 id="datasetTitle"></h2>
+                  <p id="datasetMeta"></p>
+                </div>
+                <div class="toolbar-actions">
+                  <button class="button small ghost" id="renameDatasetBtn">Đổi tên</button
+                  ><button class="button small outline" id="exportDatasetBtn">↓ CSV gốc</button
+                  ><button
+                    class="icon-btn danger-text"
+                    id="deleteDatasetBtn"
+                    aria-label="Xóa tập dữ liệu"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+              <div class="workbench-grid">
+                <section class="builder card" aria-labelledby="builderTitle">
+                  <div class="card-heading">
+                    <span class="step-badge">01</span>
+                    <div>
+                      <h3 id="builderTitle">Thiết kế truy vấn</h3>
+                      <p>Chọn điều bạn muốn nhìn thấy.</p>
+                    </div>
+                    <button class="text-btn" id="resetBtn">Đặt lại</button>
+                  </div>
+                  <details class="builder-section" id="columnsSection" open>
+                    <summary>Cột hiển thị <span id="selectedColumnsCount"></span></summary>
+                    <div class="column-checks" id="columnChecks"></div>
+                  </details>
+                  <section class="builder-section">
+                    <div class="section-title">
+                      <h4>Điều kiện <span class="muted">AND</span></h4>
+                      <button class="text-btn" id="addFilterBtn">＋ Thêm</button>
+                    </div>
+                    <div id="filterRows"></div>
+                    <p class="help" id="filterEmpty">Chưa lọc — sử dụng mọi dòng.</p>
+                  </section>
+                  <section class="builder-section">
+                    <h4>Tổng hợp & nhóm</h4>
+                    <label
+                      >Phép tính<select id="aggregateFn">
+                        <option value="">Không tổng hợp</option>
+                        <option value="count">COUNT — đếm</option>
+                        <option value="sum">SUM — tổng</option>
+                        <option value="avg">AVG — trung bình</option>
+                        <option value="min">MIN — nhỏ nhất</option>
+                        <option value="max">MAX — lớn nhất</option>
+                      </select></label
+                    ><label>Cột tính toán<select id="aggregateColumn" disabled></select></label
+                    ><label>Nhóm theo<select id="groupBy" disabled></select></label>
+                  </section>
+                  <section class="builder-section">
+                    <div class="two-fields">
+                      <label>Sắp xếp<select id="orderBy"></select></label
+                      ><label
+                        >Chiều<select id="direction">
+                          <option value="asc">Tăng dần ↑</option>
+                          <option value="desc">Giảm dần ↓</option>
+                        </select></label
+                      >
+                    </div>
+                    <label
+                      >Số dòng / trang<select id="pageSize">
+                        <option value="25">25 dòng</option>
+                        <option value="50" selected>50 dòng</option>
+                        <option value="100">100 dòng</option>
+                        <option value="500">500 dòng</option>
+                      </select></label
+                    >
+                  </section>
+                  <div class="builder-bottom">
+                    <button class="button primary wide" id="runBtn">▷ Chạy truy vấn</button>
+                    <p class="help">Giá trị lọc được truyền bằng tham số SQL.</p>
+                  </div>
+                </section>
+                <section class="result-card card" aria-labelledby="resultTitle">
+                  <div class="result-heading">
+                    <div>
+                      <div class="eyebrow">02 / KẾT QUẢ</div>
+                      <h3 id="resultTitle">Bảng dữ liệu</h3>
+                      <p id="resultMeta">Chạy truy vấn để xem kết quả.</p>
+                    </div>
+                    <span class="result-tag" id="resultTag">SQLITE</span>
+                  </div>
+                  <div id="reportContext" class="report-context" hidden>
+                    <span id="reportContextText"></span
+                    ><button class="text-btn" id="leaveReportBtn">Thoát chỉnh sửa</button>
+                  </div>
+                  <p class="dirty-note" id="dirtyNote" hidden>
+                    Cấu hình đã thay đổi. Chạy lại để cập nhật kết quả và báo cáo.
+                  </p>
+                  <div id="insight" class="insight" hidden>
+                    <div class="eyebrow">GÓC NHÌN NHANH</div>
+                    <h4 id="insightTitle"></h4>
+                    <div id="insightBars"></div>
+                    <p class="help">Tối đa 8 nhóm của trang kết quả hiện tại.</p>
+                  </div>
+                  <div
+                    class="table-scroll"
+                    tabindex="0"
+                    role="region"
+                    aria-label="Kết quả truy vấn"
+                  >
+                    <table id="resultTable">
+                      <thead></thead>
+                      <tbody></tbody>
+                    </table>
+                    <p id="noRows" class="no-rows" hidden>Không có dòng khớp điều kiện.</p>
+                  </div>
+                  <div class="result-pagination">
+                    <span id="pageLabel">Chưa có kết quả</span>
+                    <div>
+                      <button class="button small outline" id="prevPage" disabled>← Trước</button
+                      ><button class="button small outline" id="nextPage" disabled>Sau →</button>
+                    </div>
+                  </div>
+                  <div class="result-actions">
+                    <span id="saveHint">Giữ lại góc nhìn này</span>
+                    <div>
+                      <button class="button small outline" id="exportQueryBtn" disabled>
+                        ↓ Xuất trang CSV</button
+                      ><button class="button small primary" id="saveReportBtn" disabled>
+                        ▤ Lưu báo cáo
+                      </button>
+                    </div>
+                  </div>
+                  <details class="sql-details" id="sqlDetails">
+                    <summary>
+                      SQL & kế hoạch thực thi <span>Tham số tách khỏi câu lệnh</span>
+                    </summary>
+                    <pre id="sqlText"></pre>
+                    <h4>Tham số ràng buộc</h4>
+                    <pre id="paramsText"></pre>
+                    <h4>EXPLAIN QUERY PLAN</h4>
+                    <ul id="queryPlan"></ul>
+                  </details>
+                </section>
+              </div>
+              <p class="data-footnote">
+                Ô trống được lưu là NULL. Cột số dùng SQLite REAL. CSV xuất có bảo vệ chuỗi bắt đầu
+                bằng công thức.
+              </p>
+            </section>
+          </section>
+          <section id="reportsView" hidden>
+            <div class="page-heading">
+              <div>
+                <div class="eyebrow">SAVED PERSPECTIVES</div>
+                <h1>Giữ lại<br /><span>điều có ích.</span></h1>
+                <p>Báo cáo lưu cấu hình truy vấn để chạy lại trên tập dữ liệu đã nhập.</p>
+              </div>
+              <button class="button outline" id="backToExplore">← Khám phá dữ liệu</button>
+            </div>
+            <div id="reportList" class="report-grid"></div>
+          </section>
+          <footer class="page-footer">
+            <span>YangData · A little structure, a clearer picture.</span
+            ><span>Dữ liệu lưu theo phiên trình duyệt · Xuất tệp để giữ lâu dài</span>
+          </footer>
+        </main>
+      </div>
+    </div>
+    <dialog id="importDialog" class="modal import-modal">
+      <form id="importForm">
+        <div class="modal-heading">
+          <div>
+            <div class="eyebrow">THÊM NGUỒN DỮ LIỆU</div>
+            <h2>Nhập bảng CSV</h2>
+          </div>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="importDialog"
+            aria-label="Đóng nhập CSV"
+          >
+            ×
+          </button>
+        </div>
+        <p class="modal-intro">
+          Kiểm tra cột và kiểu dữ liệu trước khi lưu. Tệp nằm trên máy chủ của bạn.
+        </p>
+        <label
+          >Tên tập dữ liệu<input
+            id="importName"
+            maxlength="120"
+            required
+            placeholder="Ví dụ: Đơn hàng tháng 11" /></label
+        ><label class="file-picker"
+          >Chọn tệp CSV UTF-8<input id="csvFile" type="file" accept=".csv,text/csv" /></label
+        ><label
+          >Hoặc dán nội dung CSV<textarea
+            id="csvInput"
+            rows="6"
+            spellcheck="false"
+            placeholder="Mã đơn,Khu vực,Doanh thu&#10;001,Hà Nội,245000"
+            required
+          ></textarea>
+        </label>
+        <div class="import-tools">
+          <span class="help" id="csvSize">Tối đa 512 KB · 5.000 dòng · 30 cột</span
+          ><button type="button" class="button small outline" id="inspectBtn">
+            Kiểm tra dữ liệu
+          </button>
+        </div>
+        <p class="form-error" id="importError" role="alert" hidden></p>
+        <section id="importPreview" hidden>
+          <div class="section-title">
+            <h3>Xem trước & kiểu cột</h3>
+            <span class="help" id="previewMeta"></span>
+          </div>
+          <p class="help">Mã có số 0 đầu được giữ là văn bản. Ô trống → NULL.</p>
+          <div id="importTypes" class="import-types"></div>
+          <div class="table-scroll preview-scroll">
+            <table id="previewTable">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+        <div class="modal-actions">
+          <button type="button" class="button outline" data-close="importDialog">Hủy</button
+          ><button type="submit" class="button primary" id="importSubmit" disabled>
+            Lưu tập dữ liệu
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="reportDialog" class="modal">
+      <form id="reportForm">
+        <div class="modal-heading">
+          <h2 id="reportDialogTitle">Lưu báo cáo</h2>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="reportDialog"
+            aria-label="Đóng lưu báo cáo"
+          >
+            ×
+          </button>
+        </div>
+        <p class="modal-intro">
+          Lưu cấu hình của kết quả hiện tại. Khi mở lại, truy vấn bắt đầu từ trang đầu.
+        </p>
+        <label>Tên báo cáo<input id="reportName" required maxlength="120" /></label
+        ><label class="checkbox-label" id="saveAsLabel" hidden
+          ><input id="saveAsNew" type="checkbox" /> Lưu thành báo cáo mới</label
+        >
+        <p class="form-error" id="reportError" role="alert" hidden></p>
+        <div class="modal-actions">
+          <button type="button" class="button outline" data-close="reportDialog">Hủy</button
+          ><button class="button primary" id="reportSubmit">Lưu báo cáo</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="renameDialog" class="modal">
+      <form id="renameForm">
+        <div class="modal-heading">
+          <h2>Đổi tên tập dữ liệu</h2>
+          <button
+            type="button"
+            class="icon-btn"
+            data-close="renameDialog"
+            aria-label="Đóng đổi tên"
+          >
+            ×
+          </button>
+        </div>
+        <label>Tên mới<input id="renameName" required maxlength="120" /></label>
+        <p class="form-error" id="renameError" role="alert" hidden></p>
+        <div class="modal-actions">
+          <button type="button" class="button outline" data-close="renameDialog">Hủy</button
+          ><button class="button primary" id="renameSubmit">Lưu tên</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="confirmDialog" class="modal">
+      <div class="modal-heading">
+        <h2 id="confirmTitle">Xác nhận xóa</h2>
+        <button class="icon-btn" data-close="confirmDialog" aria-label="Đóng xác nhận">×</button>
+      </div>
+      <p id="confirmText"></p>
+      <p id="confirmError" class="form-error" role="alert" hidden></p>
+      <div class="modal-actions">
+        <button class="button outline" data-close="confirmDialog">Giữ lại</button
+        ><button class="button danger" id="confirmSubmit">Xóa</button>
+      </div>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>
