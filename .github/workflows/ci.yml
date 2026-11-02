@@ -1,0 +1,41 @@
+name: YangLab checks
+on:
+  push:
+    branches: [main, yanglab]
+    paths-ignore: ['docs/screenshots/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:ui
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: yanglab-screenshots
+          path: docs/screenshots/
+          if-no-files-found: ignore
+      - name: Commit verified screenshots
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/yanglab' || github.ref == 'refs/heads/main')
+        run: |
+          git add docs/screenshots/*.png
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: refresh verified YangLab screenshots [skip ci]"
+          git push

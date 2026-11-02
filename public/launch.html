@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#203530" />
+    <title>YangLaunch · Lịch nội dung có nhịp</title>
+    <link rel="icon" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="/assets/launch.js"></script>
+  </head>
+  <body data-module="launch">
+    <a class="skip" href="#main">Đến nội dung chính</a>
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="shell">
+      <header class="topbar" id="topbar"></header>
+      <main id="main">
+        <div class="heading">
+          <div>
+            <p class="eyebrow">02 / CONTENT PLANNING</p>
+            <h1>Ý tưởng có chỗ.<br /><span>Nội dung có lịch.</span></h1>
+            <p class="intro">
+              Từ ghi chú đầu tiên đến bản đã duyệt. Theo dõi bài viết mà không bỏ sót bước tiếp
+              theo.
+            </p>
+          </div>
+          <div class="heading-tools">
+            <button class="button subtle" id="load-demo">Dữ liệu mẫu ↗</button
+            ><button class="button primary" id="new-post">＋ Thêm bài viết</button>
+          </div>
+        </div>
+        <div id="app-error" class="app-error" role="alert" hidden></div>
+        <section class="stats" aria-label="Thống kê lịch nội dung">
+          <div class="stat">
+            <span class="stat-symbol">▦</span>
+            <div><strong id="stat-posts">0</strong><small>Bài viết đang quản lý</small></div>
+          </div>
+          <div class="stat">
+            <span class="stat-symbol">✓</span>
+            <div><strong id="stat-ready">0</strong><small>Bản đã duyệt, sẵn sàng</small></div>
+          </div>
+          <div class="stat">
+            <span class="stat-symbol">◷</span>
+            <div><strong id="stat-week">0</strong><small>Dự kiến trong 7 ngày tới</small></div>
+          </div>
+        </section>
+        <div class="toolbar">
+          <label class="search"
+            ><span aria-hidden="true">⌕</span
+            ><input
+              id="search"
+              aria-label="Tìm bài viết"
+              placeholder="Tìm tiêu đề, chiến dịch hoặc nội dung…"
+              maxlength="120" /></label
+          ><select id="channel-filter" aria-label="Lọc kênh">
+            <option value="">Tất cả kênh</option>
+            <option value="facebook">Facebook</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="blog">Blog</option>
+            <option value="x">X / Thread</option></select
+          ><select id="stage-filter" aria-label="Lọc giai đoạn">
+            <option value="">Tất cả giai đoạn</option>
+            <option value="idea">Ý tưởng</option>
+            <option value="draft">Bản nháp</option>
+            <option value="review">Chờ duyệt</option>
+            <option value="ready">Sẵn sàng</option>
+            <option value="published">Đã đăng</option>
+          </select>
+          <div class="segmented spacer">
+            <button id="board-view" class="active" aria-pressed="true">Bảng</button
+            ><button id="calendar-view" aria-pressed="false">Theo ngày</button>
+          </div>
+        </div>
+        <div class="toolbar">
+          <label class="field"
+            >Từ ngày<input id="from-filter" type="date" aria-label="Từ ngày" /></label
+          ><label class="field"
+            >Đến ngày<input id="to-filter" type="date" aria-label="Đến ngày" /></label
+          ><button id="clear-filters" class="button small">Xóa bộ lọc</button
+          ><a id="export-csv" class="button small spacer" href="/api/launch/export.csv" download
+            >↓ Xuất CSV đang lọc</a
+          ><button class="button small" id="refresh">↻ Tải lại</button>
+        </div>
+        <section id="content-board" aria-label="Bảng kế hoạch" aria-live="polite"></section>
+        <p class="fineprint">
+          YangLaunch chỉ lưu kế hoạch. “Đã đăng” là trạng thái bạn tự xác nhận; ứng dụng không đăng
+          hoặc gửi dữ liệu đến mạng xã hội.
+        </p>
+        <footer class="footer">
+          <span>YangLaunch · Ideas with a next step.</span
+          ><span>Workspace 7 ngày · Xuất dữ liệu cần giữ lâu dài</span>
+        </footer>
+      </main>
+    </div>
+    <dialog id="post-dialog" aria-labelledby="post-dialog-title">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow">MỘT Ý TƯỞNG, MỘT BƯỚC TIẾP THEO</p>
+          <h2 id="post-dialog-title">Thêm bài viết</h2>
+        </div>
+        <button class="icon-button" data-close="post-dialog" aria-label="Đóng bài viết">×</button>
+      </div>
+      <form id="post-form">
+        <div class="form-grid">
+          <label class="field full">Tiêu đề<input name="title" maxlength="120" required /></label
+          ><label class="field"
+            >Chiến dịch<input
+              name="campaign"
+              maxlength="80"
+              placeholder="Ví dụ: Nhật ký lập trình" /></label
+          ><label class="field"
+            >Kênh<select name="channel">
+              <option value="facebook">Facebook</option>
+              <option value="linkedin">LinkedIn</option>
+              <option value="blog">Blog</option>
+              <option value="x">X / Thread</option>
+            </select></label
+          ><label class="field"
+            >Lịch dự kiến<input name="due" type="date" min="2000-01-01" max="2100-12-31" /></label
+          ><label class="field"
+            >Người phụ trách<input name="owner" maxlength="60" placeholder="Giang" /></label
+          ><label class="field" id="initial-stage-field"
+            >Bắt đầu ở<select name="stage">
+              <option value="idea">Ý tưởng</option>
+              <option value="draft">Bản nháp</option>
+            </select></label
+          ><label class="field full"
+            >Nội dung<textarea
+              name="caption"
+              rows="6"
+              maxlength="12000"
+              placeholder="Điều bạn muốn chia sẻ…"
+            ></textarea
+            ><span class="hint" id="caption-count"
+              >0 ký tự · Với X/Thread, phân tách các đoạn bằng một dòng ---.</span
+            ></label
+          ><label class="field full"
+            >Ghi chú biên tập<textarea
+              name="notes"
+              rows="2"
+              maxlength="4000"
+              placeholder="Nguồn cần kiểm chứng, ảnh cần chuẩn bị…"
+            ></textarea>
+          </label>
+        </div>
+        <p id="post-stage-hint" class="hint" hidden>
+          Chuyển giai đoạn trên bảng kế hoạch sau khi lưu. Xuất nội dung chỉ lấy bản đã lưu.
+        </p>
+        <p class="dialog-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <div id="post-extra" class="left"></div>
+          <button class="button" type="button" data-close="post-dialog">Để sau</button
+          ><button class="button primary" id="save-post" type="submit">Lưu bài viết ↗</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>

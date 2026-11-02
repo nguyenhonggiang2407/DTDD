@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#203530" />
+    <title>YangMinutes · Từ cuộc họp đến việc làm</title>
+    <link rel="icon" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="/assets/minutes.js"></script>
+  </head>
+  <body data-module="minutes">
+    <a class="skip" href="#main">Đến nội dung chính</a>
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="shell">
+      <header class="topbar" id="topbar"></header>
+      <main id="main">
+        <div class="heading">
+          <div>
+            <p class="eyebrow">01 / MEETING ACTIONS</p>
+            <h1>Họp xong.<br /><span>Biết việc tiếp theo.</span></h1>
+            <p class="intro">
+              Giữ lại quyết định, giao đúng người và theo dõi những việc cần hoàn thành.
+            </p>
+          </div>
+          <div class="heading-tools">
+            <button class="button subtle" id="load-demo">Dữ liệu mẫu ↗</button
+            ><button class="button primary" id="new-meeting">＋ Tạo cuộc họp</button>
+          </div>
+        </div>
+        <div id="app-error" class="app-error" role="alert" hidden></div>
+        <section class="stats" aria-label="Thống kê cuộc họp">
+          <div class="stat">
+            <span class="stat-symbol">▤</span>
+            <div><strong id="stat-meetings">0</strong><small>Cuộc họp đã ghi lại</small></div>
+          </div>
+          <div class="stat">
+            <span class="stat-symbol">✓</span>
+            <div><strong id="stat-open">0</strong><small>Công việc đang mở</small></div>
+          </div>
+          <div class="stat">
+            <span class="stat-symbol">◷</span>
+            <div><strong id="stat-overdue">0</strong><small>Công việc quá hạn</small></div>
+          </div>
+        </section>
+        <div class="toolbar">
+          <label class="search"
+            ><span aria-hidden="true">⌕</span
+            ><input
+              id="search"
+              aria-label="Tìm cuộc họp"
+              placeholder="Tìm tiêu đề, ghi chép hoặc công việc…"
+              maxlength="120" /></label
+          ><button class="button small spacer" id="refresh">↻ Tải lại</button>
+        </div>
+        <div class="master-detail">
+          <section>
+            <div class="section-label">
+              <span>CUỘC HỌP CỦA BẠN</span><span id="meeting-count" class="count">0</span>
+            </div>
+            <div id="meeting-list" class="master-list" aria-live="polite"></div>
+          </section>
+          <section id="meeting-detail" aria-label="Chi tiết cuộc họp"></section>
+        </div>
+        <p class="fineprint">
+          Công việc chỉ được lấy từ checklist có cấu trúc hoặc do bạn nhập. Hãy rà soát người phụ
+          trách và hạn trước khi lưu.
+        </p>
+        <footer class="footer">
+          <span>YangMinutes · Clear notes. Real next steps.</span
+          ><span>Workspace 7 ngày · Xuất dữ liệu cần giữ lâu dài</span>
+        </footer>
+      </main>
+    </div>
+    <dialog id="meeting-dialog" class="wide" aria-labelledby="meeting-dialog-title">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow">GHI LẠI ĐIỀU QUAN TRỌNG</p>
+          <h2 id="meeting-dialog-title">Tạo cuộc họp</h2>
+        </div>
+        <button class="icon-button" data-close="meeting-dialog" aria-label="Đóng cuộc họp">
+          ×
+        </button>
+      </div>
+      <form id="meeting-form">
+        <div class="form-grid">
+          <label class="field full"
+            >Tên cuộc họp<input name="title" maxlength="120" required /></label
+          ><label class="field"
+            >Ngày họp<input
+              name="date"
+              type="date"
+              min="2000-01-01"
+              max="2100-12-31"
+              required /></label
+          ><label class="field"
+            >Thành viên<input
+              name="participants"
+              maxlength="900"
+              placeholder="Giang, Linh, Minh"
+            /><span class="hint">Phân tách bằng dấu phẩy, tối đa 16 người.</span></label
+          ><label class="field full"
+            >Kết luận<textarea
+              name="summary"
+              maxlength="6000"
+              rows="3"
+              placeholder="Nhóm đã thống nhất điều gì?"
+            ></textarea></label
+          ><label class="field full"
+            >Ghi chép<textarea
+              name="notes"
+              maxlength="40000"
+              rows="6"
+              placeholder="- [ ] @Giang | 2026-11-05 | Hoàn thiện tài liệu API"
+            ></textarea
+            ><span class="hint"
+              >Mẫu công việc: - [ ] @Tên | YYYY-MM-DD | Việc cần làm. Dùng [x] cho việc đã
+              xong.</span
+            ></label
+          >
+        </div>
+        <button class="button small" id="extract-actions" type="button">
+          Lấy công việc từ ghi chép
+        </button>
+        <div id="extract-preview" class="extract-preview" hidden></div>
+        <p class="dialog-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button class="button" type="button" data-close="meeting-dialog">Để sau</button
+          ><button class="button primary" id="save-meeting" type="submit">Lưu cuộc họp ↗</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>

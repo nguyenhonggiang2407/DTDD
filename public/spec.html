@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#203530" />
+    <title>YangSpec · Hợp đồng API dễ hiểu</title>
+    <link rel="icon" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="/assets/spec.js"></script>
+  </head>
+  <body data-module="spec">
+    <a class="skip" href="#main">Đến nội dung chính</a>
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="shell">
+      <header class="topbar" id="topbar"></header>
+      <main id="main">
+        <div class="heading">
+          <div>
+            <p class="eyebrow">03 / API CONTRACTS</p>
+            <h1>API rõ từ đầu.<br /><span>Ví dụ đủ để hiểu.</span></h1>
+            <p class="intro">
+              Thiết kế endpoint, kiểm tra dữ liệu mẫu và chia sẻ một hợp đồng API dễ đọc.
+            </p>
+          </div>
+          <div class="heading-tools">
+            <button class="button subtle" id="load-demo">Dữ liệu mẫu ↗</button
+            ><button class="button primary" id="new-contract">＋ Tạo bản thiết kế</button>
+          </div>
+        </div>
+        <div id="app-error" class="app-error" role="alert" hidden></div>
+        <section class="stats" aria-label="Thống kê bản thiết kế">
+          <div class="stat">
+            <span class="stat-symbol">⌘</span>
+            <div><strong id="stat-contracts">0</strong><small>Bản thiết kế API</small></div>
+          </div>
+          <div class="stat">
+            <span class="stat-symbol">↗</span>
+            <div><strong id="stat-endpoints">0</strong><small>Endpoint đã mô tả</small></div>
+          </div>
+          <div class="stat">
+            <span class="stat-symbol">{ }</span>
+            <div><strong id="stat-methods">0</strong><small>HTTP method đang dùng</small></div>
+          </div>
+        </section>
+        <div class="toolbar">
+          <label class="search"
+            ><span aria-hidden="true">⌕</span
+            ><input
+              id="search"
+              aria-label="Tìm bản thiết kế"
+              placeholder="Tìm API, đường dẫn hoặc mô tả…"
+              maxlength="120" /></label
+          ><button id="refresh" class="button small spacer">↻ Tải lại</button>
+        </div>
+        <div class="master-detail">
+          <section>
+            <div class="section-label">
+              <span>BẢN THIẾT KẾ CỦA BẠN</span><span class="count" id="contract-count">0</span>
+            </div>
+            <div id="contract-list" class="master-list" aria-live="polite"></div>
+          </section>
+          <section id="contract-detail" aria-label="Chi tiết bản thiết kế"></section>
+        </div>
+        <p class="fineprint">
+          Schema được suy ra từ ví dụ JSON. Các trường chưa được đánh dấu bắt buộc; hãy bổ sung
+          validation, xác thực và ràng buộc nghiệp vụ trước khi triển khai API thật.
+        </p>
+        <footer class="footer">
+          <span>YangSpec · Examples before assumptions.</span
+          ><span>Workspace 7 ngày · Xuất dữ liệu cần giữ lâu dài</span>
+        </footer>
+      </main>
+    </div>
+    <dialog id="contract-dialog" aria-labelledby="contract-dialog-title">
+      <div class="dialog-head">
+        <h2 id="contract-dialog-title">Tạo bản thiết kế</h2>
+        <button class="icon-button" data-close="contract-dialog" aria-label="Đóng bản thiết kế">
+          ×
+        </button>
+      </div>
+      <form id="contract-form">
+        <div class="form-grid">
+          <label class="field full">Tên API<input name="title" maxlength="120" required /></label
+          ><label class="field"
+            >Phiên bản API<input name="release" maxlength="30" value="1.0.0" required /></label
+          ><label class="field full"
+            >Mô tả<textarea
+              name="description"
+              rows="3"
+              maxlength="4000"
+              placeholder="API này giải quyết công việc gì?"
+            ></textarea>
+          </label>
+        </div>
+        <p class="dialog-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button class="button" type="button" data-close="contract-dialog">Để sau</button
+          ><button class="button primary" id="save-contract" type="submit">
+            Lưu bản thiết kế ↗
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="endpoint-dialog" class="wide" aria-labelledby="endpoint-dialog-title">
+      <div class="dialog-head">
+        <h2 id="endpoint-dialog-title">Thêm endpoint</h2>
+        <button class="icon-button" data-close="endpoint-dialog" aria-label="Đóng endpoint">
+          ×
+        </button>
+      </div>
+      <form id="endpoint-form">
+        <div class="form-grid">
+          <label class="field"
+            >HTTP method<select name="method">
+              <option>GET</option>
+              <option>POST</option>
+              <option>PUT</option>
+              <option>PATCH</option>
+              <option>DELETE</option>
+              <option>HEAD</option>
+              <option>OPTIONS</option>
+            </select></label
+          ><label class="field"
+            >Đường dẫn<input
+              name="path"
+              maxlength="180"
+              placeholder="/documents/{id}"
+              required
+            /><span class="hint">Path parameter được khai báo tự động, kiểu chuỗi.</span></label
+          ><label class="field full"
+            >Tóm tắt endpoint<input
+              name="summary"
+              maxlength="180"
+              required
+              placeholder="Đọc một tài liệu theo ID" /></label
+          ><label class="field"
+            >Mã phản hồi<input
+              name="status"
+              type="number"
+              min="100"
+              max="599"
+              value="200"
+              required /></label
+          ><label class="field full"
+            >JSON request mẫu<textarea
+              name="request"
+              class="code-input"
+              rows="4"
+              maxlength="12000"
+              spellcheck="false"
+              placeholder='{"title":"Backend notes"}'
+            ></textarea
+            ><span class="hint"
+              >Để trống cho GET/HEAD. JSON hợp lệ, tối đa 12.000 ký tự.</span
+            ></label
+          ><label class="field full"
+            >JSON response mẫu<textarea
+              name="response"
+              class="code-input"
+              rows="5"
+              maxlength="12000"
+              spellcheck="false"
+              placeholder='{"id":"doc-01","title":"Backend notes"}'
+            ></textarea
+            ><span class="hint">Để trống cho phản hồi 204/304.</span></label
+          >
+        </div>
+        <p class="dialog-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button class="button" type="button" data-close="endpoint-dialog">Để sau</button
+          ><button class="button primary" id="save-endpoint" type="submit">Lưu endpoint ↗</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="openapi-dialog" class="wide" aria-labelledby="openapi-title">
+      <div class="dialog-head">
+        <h2 id="openapi-title">OpenAPI 3.1</h2>
+        <button class="icon-button" data-close="openapi-dialog" aria-label="Đóng OpenAPI">×</button>
+      </div>
+      <p class="hint">
+        Bản bắt đầu từ ví dụ của bạn. Rà soát ràng buộc trước khi dùng làm hợp đồng triển khai.
+      </p>
+      <pre id="openapi-preview" class="code" tabindex="0"></pre>
+      <p class="dialog-error" role="alert" hidden></p>
+      <div id="openapi-download" class="dialog-actions"></div>
+    </dialog>
+  </body>
+</html>

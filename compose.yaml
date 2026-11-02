@@ -1,0 +1,12 @@
+services:
+  yanglab:
+    build: .
+    ports:
+      - '127.0.0.1:3100:3100'
+    volumes:
+      - yanglab-data:/app/data
+    mem_limit: 512m
+    cpus: 1.0
+    restart: unless-stopped
+volumes:
+  yanglab-data:
