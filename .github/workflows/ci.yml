@@ -1,14 +1,18 @@
 name: YangData checks
 on:
   push:
-    branches: [yangdata]
+    branches: [main, yangdata]
+    paths-ignore: ["docs/screenshots/**"]
+  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
@@ -16,4 +20,34 @@ jobs:
           node-version: "24"
           cache: npm
       - run: npm ci
+      - run: npm run format
       - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:ui
+      - name: Build and smoke-test runtime container
+        run: |
+          docker build -t yangdata:ci .
+          trap 'docker rm -f yangdata-check >/dev/null 2>&1 || true' EXIT
+          docker run -d --name yangdata-check --memory=512m -p 127.0.0.1:3131:3130 yangdata:ci
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3131/health; then exit 0; fi
+            sleep 1
+          done
+          docker logs yangdata-check
+          exit 1
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: yangdata-screenshots
+          path: docs/screenshots/
+          if-no-files-found: ignore
+      - name: Commit tested formatting and screenshots
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/yangdata' || github.ref == 'refs/heads/main')
+        run: |
+          git restore .github/workflows/ci.yml
+          git add lib public test server.mjs package.json README.md NOTICE.md .prettierrc.json compose.yaml docs/screenshots
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "style: format verified code and refresh interface captures [skip ci]"
+          git push
