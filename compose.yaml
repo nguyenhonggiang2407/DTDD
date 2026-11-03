@@ -1,0 +1,12 @@
+services:
+  yangslots:
+    build: .
+    ports:
+      - '127.0.0.1:3150:3150'
+    volumes:
+      - yangslots-data:/app/data
+    mem_limit: 512m
+    cpus: 1.0
+    restart: unless-stopped
+volumes:
+  yangslots-data:

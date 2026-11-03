@@ -20,3 +20,4 @@ CREATE TABLE IF NOT EXISTS idempotency (
  owner VARCHAR(36) NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE, request_key VARCHAR(80) NOT NULL,
  digest CHAR(64) NOT NULL, reservation_id VARCHAR(36) REFERENCES reservations(id) ON DELETE SET NULL, PRIMARY KEY(owner,request_key)
 );
+

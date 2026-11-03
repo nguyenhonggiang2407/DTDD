@@ -1,1 +1,355 @@
-<!doctype html><html lang="vi"><meta charset="utf-8"><title>YangSlots — Development checkpoint</title><h1>YangSlots</h1><p>The Java reservation backend is being verified. Interface work is in progress.</p></html>
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#4b58a3" />
+    <title>YangSlots — Đúng lịch. Đủ chỗ.</title>
+    <link rel="icon" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="/assets/app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Đến nội dung</a>
+    <div class="app">
+      <aside>
+        <a class="brand" href="/"
+          ><span class="brand-mark">▦</span
+          ><span>Yang<span>Slots</span><small>SPACE FOR GOOD PLANS.</small></span></a
+        >
+        <div class="workspace">
+          <span class="avatar">NG</span>
+          <div><strong>Giang’s workspace</strong><small>Không gian đặt lịch cá nhân</small></div>
+        </div>
+        <div class="side-label">
+          TÀI NGUYÊN <button data-create disabled aria-label="Thêm tài nguyên">＋</button>
+        </div>
+        <nav id="resourceList" aria-label="Tài nguyên">
+          <p class="muted">Chưa có tài nguyên.</p>
+        </nav>
+        <div class="side-tip">
+          <span>◷</span>
+          <h3>Kế hoạch tốt<br />cần một chỗ trống.</h3>
+          <p>Chọn khung giờ phù hợp. Giữ chỗ năm phút để hoàn tất xác nhận.</p>
+          <small>08:00–20:00 · UTC+7</small>
+        </div>
+        <footer class="owner">
+          <span class="avatar">NG</span>
+          <div><strong>Nguyễn Hồng Giang</strong><small>Java Backend / Full-stack</small></div>
+          <a href="https://github.com/nguyenhonggiang2407" aria-label="GitHub của Giang">↗</a>
+        </footer>
+      </aside>
+      <div class="main-wrap">
+        <header>
+          <div>Workspace <span>/</span> Lịch tài nguyên</div>
+          <span class="private">● Phiên riêng · 7 ngày</span>
+        </header>
+        <main id="main" tabindex="-1">
+          <div id="expired" class="error-banner" hidden>
+            Workspace hết hạn. Hãy tải lại trang để mở phiên mới.
+          </div>
+          <div class="hero">
+            <div>
+              <div class="eyebrow">RESERVE A LITTLE ROOM FOR YOUR IDEAS</div>
+              <h1>Đúng lịch.<br /><span>Đủ chỗ.</span></h1>
+              <p>Phòng họp, bàn làm việc hay thiết bị — sắp xếp một cách rõ ràng.</p>
+            </div>
+            <div class="hero-actions">
+              <button id="demoBtn" class="button ghost" disabled>Thử lịch mẫu ↗</button
+              ><button class="button primary" data-create disabled>＋ Thêm tài nguyên</button>
+            </div>
+          </div>
+          <section class="stats" aria-label="Thống kê">
+            <div>
+              <span>▦</span>
+              <div><strong id="statResources">0</strong><small>Tài nguyên riêng</small></div>
+            </div>
+            <div>
+              <span class="green">✓</span>
+              <div>
+                <strong id="statConfirmed">0</strong><small>Đã xác nhận trong danh sách</small>
+              </div>
+            </div>
+            <div>
+              <span class="orange">◷</span>
+              <div><strong id="statHeld">0</strong><small>Đang giữ chỗ trong danh sách</small></div>
+            </div>
+          </section>
+          <section id="empty" class="empty">
+            <div class="empty-icon">▦</div>
+            <h2>Dành một chỗ cho kế hoạch mới</h2>
+            <p>
+              Thêm tài nguyên và sức chứa, rồi chọn một khung giờ.<br />Bộ mẫu có hai tài nguyên và
+              ba lịch đặt giả lập.
+            </p>
+            <button class="button primary" data-create disabled>Thêm tài nguyên đầu tiên</button>
+            <div class="empty-steps">
+              <span><b>01</b> Chọn giờ</span><span><b>02</b> Giữ chỗ 5 phút</span
+              ><span><b>03</b> Xác nhận</span>
+            </div>
+          </section>
+          <section id="workbench" hidden>
+            <div class="resource-heading">
+              <div>
+                <label class="resource-switch"
+                  >Chọn tài nguyên<select id="resourceSelect"></select
+                ></label>
+                <h2 id="resourceName"></h2>
+                <p id="resourceMeta"></p>
+              </div>
+              <div class="resource-actions">
+                <button class="button small ghost" id="renameBtn">Đổi tên</button
+                ><button class="icon-button danger-text" id="deleteBtn" aria-label="Xóa tài nguyên">
+                  ×
+                </button>
+              </div>
+            </div>
+            <div class="planner-grid">
+              <section class="schedule card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">01 / CHOOSE YOUR TIME</div>
+                    <h3>Khoảng trống cho bạn</h3>
+                    <p>Khung 15 phút · Thời gian hiển thị tại Việt Nam.</p>
+                  </div>
+                  <span class="timezone">UTC+7</span>
+                </div>
+                <div class="date-controls">
+                  <button id="prevDay" class="icon-button" aria-label="Ngày trước">←</button
+                  ><label>Ngày đặt<input id="dayInput" type="date" /></label
+                  ><button id="nextDay" class="icon-button" aria-label="Ngày tiếp theo">→</button>
+                </div>
+                <div class="schedule-options">
+                  <label
+                    >Thời lượng<select id="minutes">
+                      <option value="15">15 phút</option>
+                      <option value="30">30 phút</option>
+                      <option value="45">45 phút</option>
+                      <option value="60" selected>60 phút</option>
+                      <option value="90">90 phút</option>
+                      <option value="120">2 giờ</option>
+                      <option value="180">3 giờ</option>
+                      <option value="240">4 giờ</option>
+                    </select></label
+                  ><label
+                    >Số đơn vị<input
+                      id="units"
+                      type="number"
+                      value="1"
+                      min="1"
+                      max="20"
+                      step="1"
+                      required
+                  /></label>
+                </div>
+                <div class="day-caption">
+                  <strong id="dayCaption"></strong><span id="slotSummary"></span>
+                </div>
+                <div id="slotGrid" class="slot-grid" aria-label="Các giờ bắt đầu"></div>
+                <div class="legend">
+                  <span>○ Còn chỗ</span><span>● Đã chọn</span><span>▧ Không thể đặt</span>
+                </div>
+                <p class="schedule-note">
+                  Giờ kết thúc của lượt này có thể là giờ bắt đầu của lượt khác. Lịch được kiểm tra
+                  lại khi bạn giữ chỗ.
+                </p>
+              </section>
+              <section class="booking-card card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">02 / MAKE A PLAN</div>
+                    <h3>Giữ chỗ của bạn</h3>
+                    <p>Bạn có năm phút để xác nhận.</p>
+                  </div>
+                  <span class="step-icon">◷</span>
+                </div>
+                <form id="holdForm">
+                  <div class="selected-time" id="selectedInfo">
+                    <span>CHƯA CHỌN GIỜ</span><strong>Chọn một ô giờ bên cạnh</strong
+                    ><small>Khung còn đủ đơn vị sẽ cho phép giữ chỗ.</small>
+                  </div>
+                  <label
+                    >Tên lượt đặt<input
+                      id="holdTitle"
+                      maxlength="100"
+                      required
+                      value="Buổi làm việc nhóm"
+                      placeholder="Ví dụ: Trao đổi kế hoạch"
+                  /></label>
+                  <div class="booking-rule">
+                    <span>✓</span>
+                    <p>
+                      Chỗ đã giữ được tính vào sức chứa ngay. Hết năm phút chưa xác nhận, chỗ tự
+                      được trả lại.
+                    </p>
+                  </div>
+                  <p id="unknownNote" class="unknown-note" hidden>
+                    Chưa nhận được phản hồi. Yêu cầu trước có thể đã được ghi. Giữ nguyên thông tin
+                    và chọn “Nhận lại kết quả” để tránh tạo thêm lượt.
+                  </p>
+                  <button class="button primary wide" id="holdBtn" disabled>
+                    ◷ Giữ chỗ 5 phút
+                  </button>
+                  <p id="holdError" class="form-error" role="alert" hidden></p>
+                  <p class="help">Tối đa bốn giờ mỗi lượt · Mỗi tài nguyên có sức chứa riêng.</p>
+                </form>
+                <div class="rule-footer">
+                  <span>03</span>
+                  <div>
+                    <strong>Xác nhận để hoàn tất</strong>
+                    <p>
+                      Đóng cửa sổ giữ chỗ vẫn giữ chỗ đến thời hạn. Bạn có thể mở lại từ danh sách.
+                    </p>
+                  </div>
+                </div>
+              </section>
+            </div>
+            <section class="reservations card">
+              <div class="card-head">
+                <div>
+                  <div class="eyebrow">YOUR PLANS, IN ONE PLACE</div>
+                  <h3>Lịch đặt của bạn</h3>
+                  <p id="listMeta"></p>
+                </div>
+                <div class="export-actions">
+                  <button class="button small outline" id="csvBtn">↓ CSV</button
+                  ><button class="button small outline" id="icsBtn">↓ Lịch ICS</button
+                  ><button class="button small ghost" id="refreshBtn">↻ Tải lại</button>
+                </div>
+              </div>
+              <div class="list-filters">
+                <input
+                  id="search"
+                  type="search"
+                  maxlength="100"
+                  placeholder="Tìm tên lượt đặt…"
+                  aria-label="Tìm lượt đặt"
+                /><select id="statusFilter" aria-label="Lọc trạng thái">
+                  <option value="">Mọi trạng thái</option>
+                  <option value="HELD">Đang giữ</option>
+                  <option value="CONFIRMED">Đã xác nhận</option>
+                  <option value="CANCELLED">Đã hủy</option>
+                  <option value="EXPIRED">Hết hạn</option></select
+                ><label class="check-label"
+                  ><input type="checkbox" id="allDays" /> Tất cả ngày</label
+                >
+              </div>
+              <div id="bookingList" class="booking-list"></div>
+              <p class="list-note">
+                CSV theo bộ lọc hiện tại. ICS chỉ chứa các lượt đã xác nhận của tài nguyên và ngày
+                đang chọn.
+              </p>
+            </section>
+          </section>
+          <div class="page-foot">
+            <span>YangSlots · A little space for better plans.</span
+            ><span>Java / Spring Boot · Nguyễn Hồng Giang</span>
+          </div>
+        </main>
+      </div>
+    </div>
+    <dialog id="createDialog">
+      <form id="createForm">
+        <div class="dialog-head">
+          <h2>Thêm tài nguyên</h2>
+          <button
+            type="button"
+            class="icon-button"
+            data-close="createDialog"
+            aria-label="Đóng thêm tài nguyên"
+          >
+            ×
+          </button>
+        </div>
+        <p>Phòng riêng thường có một đơn vị. Một nhóm bàn có thể có nhiều đơn vị đặt đồng thời.</p>
+        <label
+          >Tên tài nguyên<input
+            id="createName"
+            required
+            maxlength="100"
+            placeholder="Ví dụ: Phòng họp Lotus" /></label
+        ><label
+          >Sức chứa<input
+            id="createCapacity"
+            type="number"
+            min="1"
+            max="20"
+            step="1"
+            value="1"
+            required
+        /></label>
+        <p class="help">Sức chứa từ 1–20, cố định sau khi tạo.</p>
+        <p id="createError" class="form-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button type="button" class="button outline" data-close="createDialog">Hủy</button
+          ><button class="button primary" id="createSubmit">Thêm tài nguyên</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="reservationDialog" class="reservation-dialog">
+      <div class="dialog-head">
+        <div>
+          <div class="eyebrow">YOUR RESERVATION</div>
+          <h2 id="dialogTitle"></h2>
+        </div>
+        <button class="icon-button" data-close="reservationDialog" aria-label="Đóng lượt đặt">
+          ×
+        </button>
+      </div>
+      <div class="reservation-state">
+        <span id="dialogStatus" class="status"></span
+        ><span id="replayedNotice" hidden>Đã nhận lại yêu cầu trước</span>
+      </div>
+      <dl id="dialogFacts"></dl>
+      <div id="countdownBox" class="countdown">
+        <span>THỜI GIAN CÒN LẠI</span><strong id="countdown"></strong>
+        <p>Xác nhận trước thời hạn để hoàn tất lượt đặt.</p>
+      </div>
+      <p id="dialogMessage" class="help"></p>
+      <p id="reservationError" class="form-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button id="cancelBookingBtn" class="button outline">Hủy lượt đặt</button
+        ><button id="confirmBookingBtn" class="button primary">✓ Xác nhận đặt</button
+        ><button class="button outline" id="closeFinalBtn" data-close="reservationDialog" hidden>
+          Đóng
+        </button>
+      </div>
+    </dialog>
+    <dialog id="renameDialog">
+      <form id="renameForm">
+        <div class="dialog-head">
+          <h2>Đổi tên tài nguyên</h2>
+          <button
+            type="button"
+            class="icon-button"
+            data-close="renameDialog"
+            aria-label="Đóng đổi tên"
+          >
+            ×
+          </button>
+        </div>
+        <label>Tên mới<input id="renameName" required maxlength="100" /></label>
+        <p id="renameError" class="form-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button type="button" class="button outline" data-close="renameDialog">Hủy</button
+          ><button class="button primary" id="renameSubmit">Lưu tên</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="deleteDialog">
+      <div class="dialog-head">
+        <h2>Xóa tài nguyên?</h2>
+        <button class="icon-button" data-close="deleteDialog" aria-label="Đóng xóa tài nguyên">
+          ×
+        </button>
+      </div>
+      <p id="deleteMessage"></p>
+      <p id="deleteError" class="form-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button class="button outline" data-close="deleteDialog">Giữ lại</button
+        ><button class="button danger" id="deleteSubmit">Xóa tài nguyên</button>
+      </div>
+    </dialog>
+    <div id="toast" class="toast" role="status" hidden></div>
+  </body>
+</html>

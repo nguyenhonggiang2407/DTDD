@@ -1,0 +1,13 @@
+target
+node_modules
+data
+test
+docs
+.git
+.env
+.mvn
+mvnw
+mvnw.cmd
+upstream
+LICENSES
+
