@@ -25,6 +25,8 @@ test('type inference preserves zero-padded identifiers and never treats all-null
     ['text', 'number', 'text', 'text'],
   );
   assert.deepEqual(data.rows[0], ['001', -12.5, null, '1e3']);
+  assert.equal(parse('n\n1\n1.0\n').columns[0].distinct, 1);
+  assert.equal(parse('n\n9007199254740992\n').columns[0].type, 'text');
 });
 test('explicit text types preserve values and invalid numeric overrides are rejected', () => {
   assert.equal(inspectCSV({ csv: 'n\n123\n', types: { c0: 'text' } }).rows[0][0], '123');

@@ -611,10 +611,16 @@ async function inspect() {
     revision = state.importRevision;
   state.previewValid = false;
   updateControls();
-  const result = await api('/api/inspect', 'POST', {
-    csv: $('csvInput').value,
-    types: { ...state.importTypes },
-  });
+  let result;
+  try {
+    result = await api('/api/inspect', 'POST', {
+      csv: $('csvInput').value,
+      types: { ...state.importTypes },
+    });
+  } catch (error) {
+    if (sequence !== state.inspectSeq || revision !== state.importRevision) return;
+    throw error;
+  }
   if (sequence !== state.inspectSeq || revision !== state.importRevision) return;
   state.preview = result;
   state.previewValid = true;
@@ -640,7 +646,7 @@ async function inspect() {
       state.importRevision++;
       state.importTypes[column.key] = select.value;
       state.previewValid = false;
-      task($('inspectBtn'), inspect, 'importError');
+      task(null, inspect, 'importError');
       updateControls();
     });
     label.append(select);
@@ -790,13 +796,18 @@ $('csvFile').addEventListener('change', () =>
     async () => {
       const file = $('csvFile').files[0];
       if (!file) return;
+      $('csvInput').value = '';
+      invalidateImport();
+      const revision = state.importRevision;
       if (file.size > 524288) throw new Error('CSV tối đa 512 KB.');
       let source;
       try {
         source = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer());
       } catch {
+        if (revision !== state.importRevision) return;
         throw new Error('Không đọc được UTF-8. Hãy lưu tệp dạng CSV UTF-8.');
       }
+      if (revision !== state.importRevision) return;
       $('csvInput').value = source;
       if (!$('importName').value)
         $('importName').value = file.name.replace(/\.csv$/i, '').slice(0, 120);

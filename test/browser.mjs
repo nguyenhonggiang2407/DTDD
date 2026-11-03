@@ -49,6 +49,13 @@ async function save(page, name) {
   await page.locator('#reportSubmit').click();
   await expect(page.locator('#reportDialog')).not.toBeVisible();
 }
+async function capture(page, name) {
+  await expect(page.locator('#toast')).toBeHidden({ timeout: 8000 });
+  await page.locator('#main').focus();
+  await page.locator('#main').evaluate((element) => element.blur());
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: 'docs/screenshots/' + name + '.png', fullPage: true });
+}
 test('filter → grouped SQL → saved report → reopen → edit → CSV export', async (t) => {
   const { page } = await workspace(t);
   await demo(page);
@@ -68,12 +75,12 @@ test('filter → grouped SQL → saved report → reopen → edit → CSV export
   await expect(page.locator('#insight meter')).toHaveCount(3);
   await save(page, 'Doanh thu hoàn thành theo vùng');
   await expect(page.locator('#statReports')).toHaveText('1');
-  await page.screenshot({ path: 'docs/screenshots/desktop.png', fullPage: true });
+  await capture(page, 'desktop');
   await page.locator('#sqlDetails summary').click();
   await expect(page.locator('#sqlText')).toContainText('SUM("c3")');
   await expect(page.locator('#paramsText')).toContainText('Hoàn thành');
   await expect(page.locator('#queryPlan')).toContainText('SCAN');
-  await page.screenshot({ path: 'docs/screenshots/query-plan.png', fullPage: true });
+  await capture(page, 'query-plan');
   await page.locator('#sqlDetails summary').click();
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#exportQueryBtn').click();
@@ -94,7 +101,7 @@ test('filter → grouped SQL → saved report → reopen → edit → CSV export
   await expect(page.locator('#reportContextText')).toContainText('v2');
   await page.locator('[data-view="reports"]').click();
   await expect(page.locator('.report-card h2')).toHaveText('Đơn đang xử lý theo vùng');
-  await page.screenshot({ path: 'docs/screenshots/reports.png', fullPage: true });
+  await capture(page, 'reports');
 });
 test('CSV type correction, literal HTML, formula-safe export and duplicate reuse', async (t) => {
   const { page } = await workspace(t);
@@ -137,13 +144,59 @@ test('malformed CSV and invalid UTF-8 give actionable errors without persisting 
   await page.locator('#inspectBtn').click();
   await expect(page.locator('#importError')).toContainText('Dòng 2');
   await expect(page.locator('#importSubmit')).toBeDisabled();
+  await page.locator('#csvInput').fill('id,total\n001,10\n');
+  await page.locator('#inspectBtn').click();
+  await expect(page.locator('#importSubmit')).toBeEnabled();
   await page
     .locator('#csvFile')
     .setInputFiles({ name: 'bad.csv', mimeType: 'text/csv', buffer: Buffer.from([0xc0, 0xaf]) });
   await expect(page.locator('#importError')).toContainText('UTF-8');
+  await expect(page.locator('#importSubmit')).toBeDisabled();
+  await expect(page.locator('#csvInput')).toHaveValue('');
   await page.keyboard.press('Escape');
   await expect(page.locator('#importDialog')).not.toBeVisible();
   await expect(page.locator('#statDatasets')).toHaveText('0');
+});
+test('late inspection failures cannot replace the preview of a newer file', async (t) => {
+  const { page } = await workspace(t);
+  let release;
+  let pending = false;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/inspect', async (route) => {
+    if (route.request().postDataJSON().csv === 'a,b\n1\n') {
+      const response = await route.fetch();
+      pending = true;
+      await gate;
+      await route.fulfill({ response });
+    } else {
+      await route.continue();
+    }
+  });
+  try {
+    await page.getByRole('button', { name: '＋ Nhập CSV', exact: true }).click();
+    await page.locator('#csvInput').fill('a,b\n1\n');
+    await page.locator('#inspectBtn').click();
+    await expect.poll(() => pending).toBe(true);
+    await page.locator('#csvFile').setInputFiles({
+      name: 'New orders.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from('id,total\n001,10\n'),
+    });
+    await expect(page.locator('#importSubmit')).toBeEnabled();
+    await expect(page.locator('#previewTable')).toContainText('001');
+    release();
+    await expect(page.locator('#inspectBtn')).toBeEnabled();
+    await expect(page.locator('#importError')).not.toBeVisible();
+    await expect(page.locator('#importSubmit')).toBeEnabled();
+    await page.locator('#importSubmit').click();
+    await expect(page.locator('#importDialog')).not.toBeVisible();
+    await expect(page.locator('#datasetTitle')).toHaveText('New orders');
+    await expect(page.locator('#resultTable')).toContainText('001');
+  } finally {
+    release();
+  }
 });
 test('pagination, saved snapshots, confirmation cancellation and cascade delete', async (t) => {
   const { page } = await workspace(t);
@@ -193,7 +246,7 @@ test('mobile retains dataset switching, query controls, saved reports and a boun
     document: document.documentElement.scrollWidth,
   }));
   assert.ok(dimensions.document <= dimensions.screen + 1, JSON.stringify(dimensions));
-  await page.screenshot({ path: 'docs/screenshots/mobile.png', fullPage: true });
+  await capture(page, 'mobile');
   await page.locator('[data-view="reports"]').click();
   await expect(page.locator('.report-card')).toHaveCount(1);
   await page.getByRole('button', { name: 'Mở báo cáo ↗', exact: true }).click();
