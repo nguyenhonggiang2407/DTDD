@@ -52,12 +52,12 @@ async function send(page, status) {
   await expect(page.locator('#httpCode')).toHaveText('HTTP ' + status);
   await expect(page.locator('#sendBtn')).toBeEnabled();
 }
-async function capture(page, name) {
+async function capture(page, name, { fullPage = true } = {}) {
   await expect(page.locator('#toast')).toBeHidden({ timeout: 9000 });
   await page.locator('#main').focus();
   await page.locator('#main').evaluate((el) => el.blur());
   await page.evaluate(() => scrollTo(0, 0));
-  await page.screenshot({ path: 'docs/screenshots/' + name + '.png', fullPage: true });
+  await page.screenshot({ path: 'docs/screenshots/' + name + '.png', fullPage });
 }
 async function external(url, secret, raw, id) {
   const timestamp = String(Math.floor(Date.now() / 1000));
@@ -88,7 +88,7 @@ test('real sample inbox, HTTP test sender, receipt detail and exports', async (t
   await expect(page.locator('#eventDialog')).toBeVisible();
   await expect(page.locator('#eventRaw')).toContainText('NOTEBOOK-01');
   await expect(page.locator('#eventHeaders')).not.toContainText('signature');
-  await capture(page, 'receipt');
+  await capture(page, 'receipt', { fullPage: false });
   const downloading = page.waitForEvent('download');
   await page.locator('#downloadEventBtn').click();
   const d = await downloading,
