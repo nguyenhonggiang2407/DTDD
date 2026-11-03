@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#272c35" />
+    <title>YangHooks — Nhìn rõ từng lần gọi</title>
+    <link rel="icon" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="/assets/app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Đến nội dung</a>
+    <div class="shell">
+      <aside>
+        <a class="brand" href="/"
+          ><span class="logo">↳</span
+          ><span>Yang<span>Hooks</span><small>SIGNED. RECEIVED. UNDERSTOOD.</small></span></a
+        >
+        <div class="workspace">
+          <span class="avatar">NG</span>
+          <div><strong>Giang’s workspace</strong><small>Webhook lab cá nhân</small></div>
+          <i></i>
+        </div>
+        <div class="side-heading">
+          ENDPOINT CỦA BẠN <button data-create aria-label="Tạo endpoint mới" disabled>＋</button>
+        </div>
+        <nav id="endpointList" aria-label="Các endpoint">
+          <p class="muted">Chưa có endpoint.</p>
+        </nav>
+        <div class="side-note">
+          <span>⌁</span>
+          <h3>Một lần gửi.<br />Một dấu vết rõ ràng.</h3>
+          <p>Đối chiếu chữ ký, phân biệt gửi lại và kiểm tra nội dung từng lượt nhận.</p>
+          <small>YangHooks v1 · HMAC-SHA256</small>
+        </div>
+        <footer>
+          <span class="avatar">NG</span>
+          <div><strong>Nguyễn Hồng Giang</strong><small>Backend / Full-stack · Yang</small></div>
+          <a href="https://github.com/nguyenhonggiang2407" aria-label="GitHub của Giang">↗</a>
+        </footer>
+      </aside>
+      <div class="main-wrap">
+        <header>
+          <div>Workspace <span>/</span> Webhook inbox</div>
+          <span class="privacy">● Phiên riêng · 7 ngày</span>
+        </header>
+        <main id="main" tabindex="-1">
+          <div id="expired" class="error" hidden>
+            Workspace hết hạn. Hãy tải lại trang để mở phiên mới.
+          </div>
+          <div class="hero">
+            <div>
+              <div class="eyebrow">INCOMING REQUESTS / OUTGOING CLARITY</div>
+              <h1>Nhìn rõ<br /><span>từng lần gọi.</span></h1>
+              <p>Nhận webhook có chữ ký. Mở body thật. Kiểm tra từng request.</p>
+            </div>
+            <div class="hero-actions">
+              <button id="demoBtn" class="button ghost" disabled>Thử bộ mẫu ↗</button
+              ><button class="button primary" data-create disabled>＋ Tạo endpoint</button>
+            </div>
+          </div>
+          <div class="stats">
+            <div>
+              <span>⌁</span>
+              <div><strong id="statEndpoints">0</strong><small>Endpoint riêng</small></div>
+            </div>
+            <div>
+              <span>↓</span>
+              <div><strong id="statReceived">0</strong><small>Lượt nhận duy nhất</small></div>
+            </div>
+            <div>
+              <span>↻</span>
+              <div><strong id="statDuplicates">0</strong><small>Lần gửi trùng</small></div>
+            </div>
+          </div>
+          <section id="empty" class="empty">
+            <div>↳</div>
+            <h2>Mở một cổng nhận dữ liệu</h2>
+            <p>
+              Tạo endpoint, lưu khóa HMAC rồi gửi thử một request.<br />Hoặc dùng bộ mẫu để xem
+              luồng HTTP thật ngay trong ứng dụng.
+            </p>
+            <button class="button primary" data-create disabled>Tạo endpoint đầu tiên</button>
+            <div class="empty-steps">
+              <span>01 · Cấp khóa</span><span>02 · Ký & gửi</span><span>03 · Kiểm tra receipt</span>
+            </div>
+          </section>
+          <section id="workbench" hidden>
+            <label class="switcher">Chọn endpoint<select id="endpointSelect"></select></label>
+            <div class="endpoint-heading">
+              <div>
+                <div class="eyebrow">ĐANG NHẬN TẠI</div>
+                <h2 id="endpointName"></h2>
+                <p id="endpointMeta"></p>
+              </div>
+              <div class="endpoint-actions">
+                <button id="renameBtn" class="button small ghost">Đổi tên</button
+                ><button id="pauseBtn" class="button small outline">Tạm dừng</button
+                ><button id="rotateBtn" class="button small outline">↻ Xoay khóa</button
+                ><button id="deleteBtn" class="icon-button danger-text" aria-label="Xóa endpoint">
+                  ×
+                </button>
+              </div>
+            </div>
+            <div class="endpoint-url">
+              <span class="method">POST</span
+              ><input id="endpointUrl" readonly aria-label="URL nhận webhook" /><button
+                id="copyUrlBtn"
+                class="button small outline"
+              >
+                Sao chép URL</button
+              ><span class="state-pill" id="endpointState">ĐANG NHẬN</span>
+            </div>
+            <div class="grid">
+              <section class="inbox card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">01 / RECEIVED</div>
+                    <h3>Nhật ký webhook</h3>
+                    <p>Chỉ lưu các request có chữ ký hợp lệ và body được chấp nhận.</p>
+                  </div>
+                  <button id="refreshBtn" class="button small outline">↻ Tải lại</button>
+                </div>
+                <div class="search-row">
+                  <input
+                    id="search"
+                    type="search"
+                    maxlength="120"
+                    placeholder="Tìm loại sự kiện, delivery ID hoặc nội dung…"
+                    aria-label="Tìm lượt nhận"
+                  /><button id="exportBtn" class="button small outline">↓ Xuất JSON</button>
+                </div>
+                <div id="eventList" class="events"></div>
+                <p class="inbox-foot">
+                  Tối đa 100 lượt nhận / endpoint · Body tối đa 64 KiB · Tự tải lại khi tab đang mở
+                </p>
+              </section>
+              <section class="composer card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">02 / SEND A TEST</div>
+                    <h3>Thử một request</h3>
+                    <p>Ứng dụng ký rồi gửi HTTP về chính máy chủ này.</p>
+                  </div>
+                </div>
+                <form id="sendForm">
+                  <div class="section-title">
+                    <label for="deliveryId">Delivery ID</label
+                    ><button type="button" id="newDeliveryBtn" class="text-btn">ID mới ↗</button>
+                  </div>
+                  <input id="deliveryId" required maxlength="100" />
+                  <p class="help">Giữ ID để gửi lại. Thay body cùng ID sẽ bị từ chối.</p>
+                  <label
+                    >Chế độ kiểm tra<select id="sendMode">
+                      <option value="valid">Chữ ký hợp lệ</option>
+                      <option value="invalid-signature">Chữ ký sai → HTTP 401</option>
+                      <option value="expired">Quá 5 phút → HTTP 401</option>
+                    </select></label
+                  ><label
+                    >JSON body<textarea
+                      id="sendBody"
+                      rows="10"
+                      spellcheck="false"
+                      required
+                      maxlength="65536"
+                    ></textarea>
+                  </label>
+                  <div class="body-meta">
+                    <span>application/json</span><span id="bodyBytes"></span>
+                  </div>
+                  <button id="sendBtn" class="button primary wide">▷ Ký & gửi HTTP</button>
+                  <p class="form-error" id="sendError" role="alert" hidden></p>
+                  <div id="sendResult" class="send-result" hidden>
+                    <div><strong id="httpCode"></strong><span id="receiptLabel"></span></div>
+                    <pre id="receiptJson"></pre>
+                  </div>
+                </form>
+              </section>
+            </div>
+            <div class="protocol">
+              <span>⌁</span>
+              <p>
+                <strong>Giao thức YangHooks v1.</strong> HMAC ký timestamp + delivery ID + body thô.
+                Cửa sổ thời gian ±5 phút; delivery ID ngăn tạo lại cùng sự kiện. Định dạng này dùng
+                cho lab, không nhận trực tiếp chữ ký riêng của GitHub hay Stripe.
+              </p>
+            </div>
+          </section>
+          <div class="page-foot">
+            <span>YangHooks · A clear receipt for every signed request.</span
+            ><span>Dữ liệu nằm trong SQLite trên máy chủ của bạn.</span>
+          </div>
+        </main>
+      </div>
+    </div>
+    <dialog id="createDialog">
+      <form id="createForm">
+        <div class="dialog-head">
+          <div>
+            <div class="eyebrow">NEW INBOX</div>
+            <h2>Tạo endpoint riêng</h2>
+          </div>
+          <button
+            type="button"
+            class="icon-button"
+            data-close="createDialog"
+            aria-label="Đóng tạo endpoint"
+          >
+            ×
+          </button>
+        </div>
+        <p>
+          Mỗi endpoint có một khóa HMAC. Khóa mới chỉ hiện một lần; bạn có thể xoay khóa khi cần.
+        </p>
+        <label
+          >Tên endpoint<input
+            id="createName"
+            required
+            maxlength="120"
+            placeholder="Ví dụ: Đơn hàng thử nghiệm"
+        /></label>
+        <p id="createError" class="form-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button type="button" class="button outline" data-close="createDialog">Hủy</button
+          ><button id="createSubmit" class="button primary">Tạo endpoint</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="keyDialog">
+      <div class="dialog-head">
+        <div>
+          <div class="eyebrow">ONE-TIME KEY</div>
+          <h2>Lưu khóa HMAC mới</h2>
+        </div>
+        <button class="icon-button" data-close="keyDialog" aria-label="Đóng khóa HMAC">×</button>
+      </div>
+      <p id="keyInfo"></p>
+      <label
+        >Khóa chỉ hiển thị lần này<input
+          id="newSecret"
+          readonly
+          spellcheck="false"
+          autocomplete="off"
+      /></label>
+      <p class="key-warning">
+        Sao chép khóa trước khi đóng. Không đưa khóa vào commit hay chia sẻ công khai. Nếu mất khóa,
+        hãy xoay khóa mới.
+      </p>
+      <div class="dialog-actions">
+        <button class="button primary" data-close="keyDialog">Đã lưu khóa</button>
+      </div>
+    </dialog>
+    <dialog id="confirmDialog">
+      <div class="dialog-head">
+        <h2 id="confirmTitle"></h2>
+        <button class="icon-button" data-close="confirmDialog" aria-label="Đóng xác nhận">×</button>
+      </div>
+      <p id="confirmMessage"></p>
+      <p id="confirmError" class="form-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button class="button outline" data-close="confirmDialog">Giữ lại</button
+        ><button id="confirmSubmit" class="button primary">Xác nhận</button>
+      </div>
+    </dialog>
+    <dialog id="renameDialog">
+      <form id="renameForm">
+        <div class="dialog-head">
+          <h2>Đổi tên endpoint</h2>
+          <button
+            type="button"
+            class="icon-button"
+            data-close="renameDialog"
+            aria-label="Đóng đổi tên"
+          >
+            ×
+          </button>
+        </div>
+        <label>Tên mới<input id="renameName" required maxlength="120" /></label>
+        <p class="form-error" id="renameError" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button type="button" class="button outline" data-close="renameDialog">Hủy</button
+          ><button id="renameSubmit" class="button primary">Lưu tên</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="eventDialog" class="event-dialog">
+      <div class="dialog-head">
+        <div>
+          <div class="eyebrow">VERIFIED RECEIPT</div>
+          <h2 id="eventTitle"></h2>
+        </div>
+        <button class="icon-button" data-close="eventDialog" aria-label="Đóng lượt nhận">×</button>
+      </div>
+      <p id="eventInfo"></p>
+      <dl id="eventFacts"></dl>
+      <div class="section-title">
+        <h3>Body thô · byte đã ký</h3>
+        <button id="downloadEventBtn" class="button small outline">↓ Receipt JSON</button>
+      </div>
+      <pre id="eventRaw"></pre>
+      <h3>Headers được lưu</h3>
+      <pre id="eventHeaders"></pre>
+      <p class="help">Authorization, Cookie, API key và chữ ký không được lưu vào lịch sử.</p>
+    </dialog>
+    <div id="toast" class="toast" role="status" hidden></div>
+  </body>
+</html>

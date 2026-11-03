@@ -1,0 +1,5 @@
+{
+  "type": "order.created",
+  "order": { "id": "ORDER-001", "items": 3, "total": 245000 },
+  "note": "Fictional YangHooks sample"
+}
