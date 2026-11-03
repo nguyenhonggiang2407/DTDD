@@ -1,0 +1,21 @@
+# Portfolio demo: browser workspaces use ephemeral SQLite on Render Free.
+services:
+  - type: web
+    name: giang-yangcareer
+    runtime: python
+    plan: free
+    region: singapore
+    branch: main
+    autoDeployTrigger: checksPass
+    buildCommand: python -m pip install -r requirements.txt
+    startCommand: 'ALLOWED_ORIGINS="${ALLOWED_ORIGINS:-$RENDER_EXTERNAL_URL}" python main.py'
+    healthCheckPath: /health
+    envVars:
+      - key: HOST
+        value: "0.0.0.0"
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: YANGCAREER_DB
+        value: "/tmp/yangcareer.sqlite3"
+      - key: INDEX_ON_STARTUP
+        value: "0"

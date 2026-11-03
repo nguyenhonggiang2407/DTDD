@@ -1,5 +1,7 @@
 # YangCareer
 
+**Hosting demo:** đã có cấu hình Render Free. Xem [cách triển khai và giới hạn dữ liệu tạm](docs/render-free.md). Dữ liệu SQLite có thể mất sau khi host ngủ/restart; chưa có URL demo được xác minh.
+
 [![Checks](https://github.com/nguyenhonggiang2407/DTDD/actions/workflows/checks.yml/badge.svg)](https://github.com/nguyenhonggiang2407/DTDD/actions/workflows/checks.yml)
 
 Không gian tạo hồ sơ kỹ năng, xem công việc mẫu và theo dõi ứng tuyển.
