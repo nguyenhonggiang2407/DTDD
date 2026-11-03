@@ -1,10 +1,21 @@
 # YangCareer trên Render Free
 
-Cấu hình [render.yaml](../render.yaml) dành riêng cho YangCareer trong nhánh `main` của `nguyenhonggiang2407/DTDD`. Không gộp hoặc triển khai các dự án khác trong các nhánh cũ của repository này. Cấu hình đã được chuẩn bị; chưa có URL hay service được xác minh.
+## Bản đang chạy
+
+- Live demo: [https://giang-yangcareer.onrender.com/app/](https://giang-yangcareer.onrender.com/app/).
+- Render service: `srv-dbkr15ugekts73eukbmg`, tên `giang-yangcareer`, workspace YangRent, vùng Singapore, gói **Free**.
+- Dashboard: [quản lý dịch vụ](https://dashboard.render.com/web/srv-dbkr15ugekts73eukbmg).
+- Mã được triển khai: `e32472382b4b1aa7e798958146ed61eec665f7d8` trên nhánh `main`; CI của mã này đã đạt trước khi triển khai.
+- Ngày kiểm tra: 03/11/2026. Kiểm tra HTTPS, health API, frontend assets, cookie Secure/HttpOnly, tạo rồi đọc lại dữ liệu hư cấu, từ chối Origin/CSRF không hợp lệ.
+
+Dịch vụ được tạo qua Render MCP, hiện tự deploy theo **On Commit**. `render.yaml` là cấu hình tái tạo; dịch vụ hiện tại chưa được nối với Blueprint nên sửa YAML không tự đổi settings trên Render. Bản YAML vẫn định nghĩa HTTP health path khi dùng Blueprint; dịch vụ MCP hiện dùng TCP readiness, còn health API được kiểm tra riêng qua HTTPS. Khi chuyển sang Blueprint, đối chiếu service hiện có và nguồn cấu hình trước khi sync.
+
+
+Cấu hình [render.yaml](../render.yaml) dành riêng cho YangCareer trong nhánh `main` của `nguyenhonggiang2407/DTDD`. Không gộp hoặc triển khai các dự án khác trong các nhánh cũ của repository này. Dịch vụ và URL phía trên đã được triển khai và kiểm tra.
 
 ## Chạy trên Render
 
-Tạo Python Web Service từ Blueprint `render.yaml`, chọn **Free**, không thêm disk hoặc database trả phí. Python 3.12 lấy bản vá mới nhất theo `.python-version`. Build `python -m pip install -r requirements.txt`; start `ALLOWED_ORIGINS="${ALLOWED_ORIGINS:-$RENDER_EXTERNAL_URL}" python main.py`.
+Khi tái tạo trong một workspace khác, tạo Python Web Service từ Blueprint `render.yaml`, chọn **Free**, không thêm disk hoặc database trả phí. Python 3.12 lấy bản vá mới nhất theo `.python-version`. Build `python -m pip install -r requirements.txt`; start `ALLOWED_ORIGINS="${ALLOWED_ORIGINS:-$RENDER_EXTERNAL_URL}" python main.py`.
 
 Start command đọc đúng URL HTTPS do Render cấp để kiểm tra Origin/CSRF; không dùng wildcard. `HOST=0.0.0.0`, cổng lấy từ `PORT` của Render. `COOKIE_SECURE=1` giữ cookie phiên Secure/HttpOnly. Với domain riêng, đặt `ALLOWED_ORIGINS` thành đúng origin HTTPS, hoặc danh sách origin chính xác phân cách bằng dấu phẩy, rồi redeploy.
 

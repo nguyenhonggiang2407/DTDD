@@ -6,9 +6,9 @@ services:
     plan: free
     region: singapore
     branch: main
-    autoDeployTrigger: checksPass
+    autoDeployTrigger: commit
     buildCommand: python -m pip install -r requirements.txt
-    startCommand: 'ALLOWED_ORIGINS="${ALLOWED_ORIGINS:-$RENDER_EXTERNAL_URL}" python main.py'
+    startCommand: 'ALLOWED_ORIGINS="${ALLOWED_ORIGINS:-$RENDER_EXTERNAL_URL}" exec python main.py'
     healthCheckPath: /health
     envVars:
       - key: HOST
