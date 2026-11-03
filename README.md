@@ -8,6 +8,14 @@ Không gian tạo hồ sơ kỹ năng, xem công việc mẫu và theo dõi ứn
 Bản phát triển của **Nguyễn Hồng Giang**, dựa trên **TalentBridge của Trịnh Văn Hào**
 theo MIT License. Xem [nguồn và phạm vi thay đổi](NOTICE.md).
 
+## Các ứng dụng trên nhánh khác
+
+Nhánh mặc định `main` chứa YangCareer. YangSlots, YangDocs, YangQueue, YangData,
+YangHooks và YangLab là những ứng dụng độc lập trên các nhánh khác, không phải
+tính năng của YangCareer. [Danh mục nhánh đã audit](docs/branch-catalog.md) có
+link source, commit được kiểm tra, lệnh chạy/test và điều kiện tách repo an toàn.
+Các nhánh gốc và lịch sử hiện vẫn được giữ nguyên.
+
 ## Chức năng
 
 - Tạo hồ sơ kỹ năng không cần khóa dịch vụ bên ngoài.
