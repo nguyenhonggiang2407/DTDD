@@ -35,6 +35,30 @@ class ReservationsTest {
   static final HttpClient CLIENT =
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 
+  @Test
+  void healthProbeUsesConfiguredPortAndRejectsInvalidPorts() throws Exception {
+    String executable =
+        java.nio.file.Path.of(System.getProperty("java.home"), "bin", "java").toString();
+    ProcessBuilder builder =
+        new ProcessBuilder(executable, "-cp", "target/classes", "vn.yang.slots.HealthProbe");
+    builder.environment().put("PORT", env.getProperty("local.server.port"));
+    Process healthy = builder.start();
+    try {
+      assertTrue(healthy.waitFor(8, TimeUnit.SECONDS));
+      assertEquals(0, healthy.exitValue());
+    } finally {
+      healthy.destroyForcibly();
+    }
+    builder.environment().put("PORT", "0");
+    Process invalid = builder.start();
+    try {
+      assertTrue(invalid.waitFor(8, TimeUnit.SECONDS));
+      assertEquals(1, invalid.exitValue());
+    } finally {
+      invalid.destroyForcibly();
+    }
+  }
+
   @TestConfiguration
   static class TimeConfig {
     @Bean

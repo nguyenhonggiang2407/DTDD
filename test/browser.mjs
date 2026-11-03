@@ -208,12 +208,12 @@ test('a concurrent confirmation refreshes stale modal state instead of repeating
   const { page, context } = await workspace(t);
   await create(page, 'Two tabs');
   await hold(page);
-  const workspace = await (await context.request.get(base + '/api/workspace')).json();
+  const workspaceData = await (await context.request.get(base + '/api/workspace')).json();
   const list = await (await context.request.get(base + '/api/reservations')).json();
   const booking = list.reservations[0];
   const changed = await context.request.post(
     base + '/api/reservations/' + booking.id + '/confirm',
-    { headers: { 'X-CSRF-Token': workspace.csrf }, data: { version: booking.version } },
+    { headers: { 'X-CSRF-Token': workspaceData.csrf }, data: { version: booking.version } },
   );
   assert.equal(changed.status(), 200);
   await page.locator('#confirmBookingBtn').click();
