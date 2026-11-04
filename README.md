@@ -8,13 +8,23 @@ Không gian tạo hồ sơ kỹ năng, xem công việc mẫu và theo dõi ứn
 Bản phát triển của **Nguyễn Hồng Giang**, dựa trên **TalentBridge của Trịnh Văn Hào**
 theo MIT License. Xem [nguồn và phạm vi thay đổi](NOTICE.md).
 
-## Các ứng dụng trên nhánh khác
+## Các ứng dụng đã tách repository
 
-Nhánh mặc định `main` chứa YangCareer. YangSlots, YangDocs, YangQueue, YangData,
-YangHooks và YangLab là những ứng dụng độc lập trên các nhánh khác, không phải
-tính năng của YangCareer. [Danh mục nhánh đã audit](docs/branch-catalog.md) có
-link source, commit được kiểm tra, lệnh chạy/test và điều kiện tách repo an toàn.
-Các nhánh gốc và lịch sử hiện vẫn được giữ nguyên.
+Nhánh mặc định `main` tiếp tục chứa YangCareer. Sáu ứng dụng độc lập đã được tách
+sang repository riêng ngày 04/11/2026, giữ lịch sử và thông báo nguồn:
+
+| Repository | Nội dung |
+| --- | --- |
+| [YangSlots](https://github.com/nguyenhonggiang2407/YangSlots) | Java/Spring Boot, giữ chỗ và kiểm tra sức chứa trong transaction |
+| [YangDocs](https://github.com/nguyenhonggiang2407/YangDocs) | FastAPI/SQLite FTS5, thư viện tài liệu và trích dẫn theo trang |
+| [YangQueue](https://github.com/nguyenhonggiang2407/YangQueue) | Node.js/SQLite, worker, retry và idempotency |
+| [YangData](https://github.com/nguyenhonggiang2407/YangData) | Node.js/SQLite, nhập CSV và query builder tham số hóa |
+| [YangHooks](https://github.com/nguyenhonggiang2407/YangHooks) | Node.js/SQLite, webhook lab với HMAC và replay checks |
+| [YangLab](https://github.com/nguyenhonggiang2407/YangLab) | Monorepo cho biên bản họp, kế hoạch nội dung và OpenAPI |
+
+[Hồ sơ tách và audit](docs/branch-catalog.md) ghi source branch/SHA, lịch sử giữ lại,
+kiểm thử và CI của repo mới. Các nhánh DTDD gốc vẫn được giữ; các app này không
+phải tính năng của YangCareer. Chưa có public application demo được xác minh cho sáu app.
 
 ## Chức năng
 
