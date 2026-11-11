@@ -30,6 +30,7 @@ phải tính năng của YangCareer. Chưa có public application demo được 
 
 - Tạo hồ sơ kỹ năng không cần khóa dịch vụ bên ngoài.
 - Tìm kiếm và lọc công việc; sắp xếp theo số kỹ năng trùng khớp.
+- Khi đổi hoặc xóa hồ sơ đang chọn, danh sách công việc trở về thứ tự mặc định. Chọn **Sắp theo kỹ năng** để tính điểm theo hồ sơ hiện tại.
 - Ghi nhận ứng tuyển và xem lịch sử theo từng hồ sơ.
 - Tách CV theo phiên trình duyệt, kiểm tra quyền ở API.
 - Upload PDF tối đa 10 MB, tạo file tạm bằng tên do server sinh.

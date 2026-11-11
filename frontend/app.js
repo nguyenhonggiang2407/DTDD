@@ -3,6 +3,7 @@ const state = { jobs: [], profiles: [], selected: null, scores: new Map(), ai: f
 const $ = (selector) => document.querySelector(selector);
 let workspacePromise;
 let toastTimer;
+let profileSelectionVersion = 0;
 async function workspace() {
   if (!workspacePromise) workspacePromise = fetch("/workspace", { credentials: "same-origin" }).then(async response => {
     if (!response.ok) throw new Error("Không thể mở không gian riêng.");
@@ -38,18 +39,21 @@ function toast(message) {
 function empty(text) { return node("div", "empty", text); }
 function currentProfile() { return state.profiles.find(profile => profile.id === state.selected); }
 function selectProfile(id) {
-  state.selected = id;
-  sessionStorage.setItem("yangcareer.selectedCV", String(id));
-  state.scores.clear();
+  if (id !== state.selected) {
+    state.selected = id;
+    profileSelectionVersion++;
+    state.scores.clear();
+    renderJobs();
+  }
+  if (id === null) sessionStorage.removeItem("yangcareer.selectedCV");
+  else sessionStorage.setItem("yangcareer.selectedCV", String(id));
   renderProfiles();
 }
 async function refreshProfiles() {
   state.profiles = await api("/cvs");
-  if (!state.profiles.some(row => row.id === state.selected)) {
-    state.selected = state.profiles[0]?.id || null;
-  }
   $("#cv-count").textContent = String(state.profiles.length);
-  renderProfiles();
+  const selected = currentProfile() ?? state.profiles[0];
+  selectProfile(selected?.id ?? null);
 }
 function renderJobs() {
   const query = $("#search").value.trim().toLocaleLowerCase();
@@ -150,14 +154,19 @@ function route() {
 $("#search").addEventListener("input", renderJobs);
 $("#location").addEventListener("change", renderJobs);
 $("#rank-button").addEventListener("click", async event => {
-  if (!currentProfile()) { locationHash("profiles"); toast("Hãy tạo hoặc chọn một hồ sơ trước."); return; }
+  const profile = currentProfile();
+  if (!profile) { locationHash("profiles"); toast("Hãy tạo hoặc chọn một hồ sơ trước."); return; }
+  const selectionVersion = profileSelectionVersion;
   const button = event.currentTarget; button.disabled = true;
   try {
     const result = await api("/jobs/search", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cv_id: state.selected, limit: 100, offset: 0 }) });
+      body: JSON.stringify({ cv_id: profile.id, limit: 100, offset: 0 }) });
+    if (selectionVersion !== profileSelectionVersion) return;
     state.scores = new Map(result.jobs.map(job => [job.job_id, job.match_score || 0]));
-    renderJobs(); toast("Đã sắp theo kỹ năng của " + currentProfile().cv_info.name + ". Đây không phải dự đoán kết quả tuyển dụng.");
-  } catch (error) { toast(error.message); } finally { button.disabled = false; }
+    renderJobs(); toast("Đã sắp theo kỹ năng của " + profile.cv_info.name + ". Đây không phải dự đoán kết quả tuyển dụng.");
+  } catch (error) {
+    if (selectionVersion === profileSelectionVersion) toast(error.message);
+  } finally { button.disabled = false; }
 });
 $("#manual-form").addEventListener("submit", async event => {
   event.preventDefault();
