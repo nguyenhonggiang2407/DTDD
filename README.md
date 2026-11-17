@@ -1,142 +1,113 @@
-# YangCareer
+# CourtMate — Quản lý sân Pickleball
 
-**Live demo:** [Mở YangCareer](https://giang-yangcareer.onrender.com/app/). Bản Render Free dùng dữ liệu SQLite tạm; dữ liệu có thể mất sau khi host ngủ hoặc redeploy. Xem [cấu hình hosting](docs/render-free.md).
+**Phiên bản: 2.2.0-demo · Android (Java/SQLite) + Cloud Booking (Python/FastAPI)**
 
-[![Checks](https://github.com/nguyenhonggiang2407/DTDD/actions/workflows/checks.yml/badge.svg)](https://github.com/nguyenhonggiang2407/DTDD/actions/workflows/checks.yml)
+CourtMate là dự án quản lý vận hành sân Pickleball. Ứng dụng Android hỗ trợ lịch đặt sân, khách hàng, phiên chơi, dịch vụ, thuê thiết bị, hóa đơn và thống kê. Phần cloud là một máy chủ **độc lập** để nhận yêu cầu đặt sân từ website và chia sẻ lịch online giữa các máy quản trị.
 
-Không gian tạo hồ sơ kỹ năng, xem công việc mẫu và theo dõi ứng tuyển.
-Bản phát triển của **Nguyễn Hồng Giang**, dựa trên **TalentBridge của Trịnh Văn Hào**
-theo MIT License. Xem [nguồn và phạm vi thay đổi](NOTICE.md).
+> **Dự án demo/portfolio, chưa sẵn sàng triển khai kinh doanh thực tế.** Lịch Android SQLite **không đồng bộ hai chiều** với lịch cloud. Chưa tích hợp ngân hàng thật; QR tại chỗ phải có nhân viên xác nhận. Dữ liệu demo không phải giao dịch thật.
 
-## Các ứng dụng đã tách repository
+## Chức năng nổi bật
 
-Nhánh mặc định `main` tiếp tục chứa YangCareer. Sáu ứng dụng độc lập đã được tách
-sang repository riêng ngày 04/11/2026, giữ lịch sử và thông báo nguồn:
+| Android (offline) | Cloud (online, thí điểm) |
+|---|---|
+| Đăng nhập Admin/Staff, mật khẩu băm và phân quyền | API FastAPI, cơ sở dữ liệu SQLite phía server |
+| Sân, khách hàng, lịch đặt, lịch sân theo ngày | Website đặt sân, giữ chỗ 20 phút, chống trùng thời gian |
+| Phiên chơi, thanh toán/cọc, hóa đơn | Nhân viên xác nhận/hủy yêu cầu, quản lý sân cloud |
+| Dịch vụ, thuê thiết bị, HLV, lớp học, sự kiện | Khách tra cứu/hủy yêu cầu chờ bằng mã bí mật |
+| Dashboard/thống kê, backup, dữ liệu demo | Thống kê đặt sân, số tiền đã nhận qua webhook đã xác minh |
+| Điều khiển đèn LAN ở cấu hình hiện có | Webhook ký HMAC cho adapter PSP (chưa kết nối ngân hàng thật) |
 
-| Repository | Nội dung |
-| --- | --- |
-| [YangSlots](https://github.com/nguyenhonggiang2407/YangSlots) | Java/Spring Boot, giữ chỗ và kiểm tra sức chứa trong transaction |
-| [YangDocs](https://github.com/nguyenhonggiang2407/YangDocs) | FastAPI/SQLite FTS5, thư viện tài liệu và trích dẫn theo trang |
-| [YangQueue](https://github.com/nguyenhonggiang2407/YangQueue) | Node.js/SQLite, worker, retry và idempotency |
-| [YangData](https://github.com/nguyenhonggiang2407/YangData) | Node.js/SQLite, nhập CSV và query builder tham số hóa |
-| [YangHooks](https://github.com/nguyenhonggiang2407/YangHooks) | Node.js/SQLite, webhook lab với HMAC và replay checks |
-| [YangLab](https://github.com/nguyenhonggiang2407/YangLab) | Monorepo cho biên bản họp, kế hoạch nội dung và OpenAPI |
+## Cấu trúc dự án
 
-[Hồ sơ tách và audit](docs/branch-catalog.md) ghi source branch/SHA, lịch sử giữ lại,
-kiểm thử và CI của repo mới. Các nhánh DTDD gốc vẫn được giữ; các app này không
-phải tính năng của YangCareer. Chưa có public application demo được xác minh cho sáu app.
+```text
+CourtMatePickleballCourtManager/
+├── app/src/main/                 # Ứng dụng Android (Java, XML, SQLite)
+│   ├── java/.../data/            # DatabaseHelper, DemoDataSeeder
+│   ├── java/.../repository/      # Repository Android, cloud API
+│   └── java/.../security/        # Đăng nhập và phân quyền
+├── backend/
+│   ├── app.py                    # FastAPI + luật nghiệp vụ cloud
+│   ├── static/index.html         # Website khách đặt sân
+│   ├── tests/                    # API/integration tests
+│   └── compose.yaml              # Docker Compose để chạy nội bộ
+├── .github/workflows/ci.yml     # GitHub Actions: Python và Android
+├── docs/                        # Kịch bản demo, QA, hướng dẫn GitHub
+└── README.md
+```
 
-## Chức năng
+## Xem demo nhanh (không cần cài Android Studio)
 
-- Tạo hồ sơ kỹ năng không cần khóa dịch vụ bên ngoài.
-- Tìm kiếm và lọc công việc; sắp xếp theo số kỹ năng trùng khớp.
-- Ghi nhận ứng tuyển và xem lịch sử theo từng hồ sơ.
-- Tách CV theo phiên trình duyệt, kiểm tra quyền ở API.
-- Upload PDF tối đa 10 MB, tạo file tạm bằng tên do server sinh.
-- Xem PDF bằng response riêng tư, không xuất file ra thư mục public.
-- Phân tích CV và gợi ý qua Gemini/LangChain khi được cấu hình.
-- Giao diện tiếng Việt, có bố cục máy tính và điện thoại.
+**Cách 1 — demo offline ngay:** tải file [`demo/index.html`](demo/index.html) về máy và mở bằng Chrome/Edge. Có 4 sân mẫu, lịch trống, gửi/hủy yêu cầu, bảng quản trị mô phỏng. **Đây là chế độ giả lập trong trình duyệt**, dữ liệu chỉ nằm trong bộ nhớ của trang và mất khi tải lại; không kết nối server hoặc thanh toán thật. [Ảnh giao diện](demo/web-preview.png).
 
-Dữ liệu công việc trong bản này **hoàn toàn hư cấu**. Nút lưu ứng tuyển chỉ lưu vào
-ứng dụng, không gửi hồ sơ đến nhà tuyển dụng. So khớp kỹ năng là phép so sánh tập
-kỹ năng, không phải dự đoán khả năng trúng tuyển.
+**Cách 2 — backend FastAPI thật trên máy:** cần Python 3.11+ và internet để cài thư viện. Trên Windows nhấp đúp `scripts/run_demo_windows.bat`, hoặc trên Linux/macOS chạy `bash scripts/run_demo_linux.sh`; mở **http://127.0.0.1:8000/**. Script tự tạo mã token ngẫu nhiên, cơ sở dữ liệu demo và 4 sân mẫu. Không công khai server này trên internet; dừng bằng `Ctrl+C`. Để chạy trên máy khác, xem [backend/README.md](backend/README.md).
 
-## Chạy cục bộ
+## 1. Chạy ứng dụng Android
 
-Cần Python 3.12.
+1. Cài Android Studio và Android SDK phù hợp với `compileSdk 37`.
+2. Mở **thư mục chứa `settings.gradle.kts`**, không mở riêng thư mục `app`.
+3. Sync Gradle. Chọn máy ảo hoặc điện thoại và chạy cấu hình `app`.
+4. **Lần chạy đầu, tạo tài khoản Admin riêng**; không có tài khoản/mật khẩu quản trị mặc định.
+5. Dữ liệu minh họa được thêm khi tạo SQLite lần đầu. Với bản nâng cấp có DB sẵn, Admin có thể nạp dữ liệu demo trong Cài đặt sau khi sao lưu.
+
+Lệnh kiểm tra (macOS/Linux: `bash ./gradlew`; Windows: `gradlew.bat`):
 
 ```bash
-git clone https://github.com/nguyenhonggiang2407/DTDD.git
-cd DTDD
+bash ./gradlew testDebugUnitTest
+bash ./gradlew assembleDebug
+```
+
+Các lệnh trên yêu cầu tải được plugin Gradle/Android SDK. Máy đóng gói bản 2.2 chỉ kiểm thử backend, **chưa xác nhận build APK Android**.
+
+## 2. Chạy Cloud Booking trên máy cá nhân
+
+Yêu cầu Python 3.11+, không dùng token trong mã nguồn:
+
+```bash
+cd backend
 python -m venv .venv
-# Windows: .venv\Scripts\activate
+# Windows PowerShell: .venv\Scripts\Activate.ps1
 # macOS/Linux: source .venv/bin/activate
-python -m pip install -r requirements.txt
-python main.py
+python -m pip install -r requirements-dev.txt
+# macOS/Linux: export COURTMATE_ADMIN_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+# Windows PowerShell: $env:COURTMATE_ADMIN_TOKEN = python -c "import secrets; print(secrets.token_urlsafe(48))"
+# macOS/Linux: export COURTMATE_PUBLIC_BOOKING=true
+# Windows PowerShell: $env:COURTMATE_PUBLIC_BOOKING = "true"
+uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
-Mở **http://127.0.0.1:9990/app/**. API docs: **http://127.0.0.1:9990/docs**.
+Mở `http://127.0.0.1:8000/docs` để xem API và `http://127.0.0.1:8000/` để xem website. Tạo sân trên `/docs` bằng `Authorization: Bearer <TOKEN>` hoặc qua Android sau khi triển khai server HTTPS. **Không nhập URL localhost vào Android cloud**; màn hình cloud yêu cầu HTTPS hợp lệ.
 
-Lần chạy đầu tạo SQLite và sáu công việc mẫu. Chưa cấu hình Gemini vẫn dùng được
-hồ sơ thủ công, lọc việc làm, so khớp kỹ năng và lịch sử ứng tuyển.
-
-## Phần phân tích CV tùy chọn
+Chạy kiểm thử:
 
 ```bash
-python -m pip install -r requirements-ai.txt
+cd backend
+python -m pytest tests -q
 ```
 
-Sao chép `.env.example` thành `.env`, điền `GOOGLE_API_KEY` của bạn.
-Chọn `GOOGLE_MODEL` và `EMBEDDING_MODEL` đang được tài khoản hỗ trợ.
-Đặt `INDEX_ON_STARTUP=1` nếu muốn tạo/cập nhật chỉ mục việc làm.
+Để bật adapter thanh toán, bắt buộc có cấu hình PSP riêng và webhook đã xác minh. Không copy một URL demo rồi coi là đã tích hợp tiền thật. Xem [hướng dẫn backend](backend/README.md).
 
-Không commit `.env`. Bản nâng cấp dùng một khóa cấu hình, không luân phiên khóa
-để né giới hạn dịch vụ. PDF chỉ được gửi đến Gemini sau thao tác gửi và chấp thuận
-của người dùng. Bản này chưa hỗ trợ PDF scan cần OCR.
+## 3. Phiên bản 2.2 bổ sung gì?
 
-Các luồng gọi mô hình thật cần khóa riêng để kiểm chứng. Kiểm thử tự động sử dụng
-dữ liệu hư cấu và thay phần trích xuất bên ngoài bằng mock cho bài kiểm tra upload;
-không dùng mock để trình bày kết quả dịch vụ thật.
+- Admin cloud có thể **tạm đóng/mở sân** để ngăn đặt mới mà không xóa lịch sử.
+- Dashboard cloud hiển thị lịch đang chờ, đã xác nhận, đã hủy, doanh thu đã xác minh và số tiền phải thu.
+- Khách có thể **tra cứu trạng thái, hủy lịch còn chờ** nếu giữ mã đơn và mã bí mật. Website không lưu mã bí mật vào trình duyệt.
+- Chặn đặt khung giờ bắt đầu trong quá khứ (múi giờ Việt Nam); cải thiện bảo vệ token và chuẩn hóa dữ liệu.
+- Android màn hình Cloud bổ sung quản lý trạng thái sân, thống kê; backend có **16 bài kiểm thử**.
+- Có workflow GitHub Actions, file ignore và hướng dẫn đưa mã nguồn lên repository.
 
-## Phạm vi quyền truy cập
+Xem [changelog](CHANGELOG.md), [bản bàn giao 2.2](docs/RELEASE_V2_2_GITHUB.md) và [hướng dẫn đưa lên GitHub](docs/GITHUB_PUBLISH.md).
 
-CV và lịch sử gắn với cookie phiên HttpOnly. Thao tác ghi cần CSRF token.
-Dữ liệu CV không được thêm vào chỉ mục vector chung của công việc.
+## 4. Các giới hạn cần giải quyết trước khi dùng thật
 
-Đây là phiên riêng theo trình duyệt, **chưa phải hệ thống tài khoản có khôi phục**.
-Cookie hết hạn sau 14 ngày; xóa cookie có thể làm mất quyền truy cập dữ liệu cũ.
-CV cũ chưa có owner không tự chuyển cho người truy cập đầu tiên.
-Nếu phát triển thành dịch vụ nhiều người dùng, cần bổ sung tài khoản, quy trình
-xóa/lưu trữ dữ liệu, giới hạn tài nguyên và HTTPS.
+- Lịch Android **offline và cloud tách rời**: không sử dụng song song để nhận đặt cho cùng sân trước khi có chiến lược đồng bộ/xử lý xung đột.
+- Cloud dùng **một token quản trị chia sẻ**, chưa có đăng nhập per-user, thu hồi phiên hay RBAC trên máy chủ.
+- Không có chống spam đủ mạnh ở hạ tầng công khai; cần HTTPS reverse proxy, WAF/CAPTCHA, giám sát và database đa tiến trình.
+- Thanh toán ngân hàng chưa kết nối thực tế. Chưa có luồng refund và đối soát thực với PSP.
+- File backup SQLite Android vẫn có thể chứa thông tin nhạy cảm dưới dạng chưa mã hóa.
+- Chưa có Android instrumentation test trên thiết bị, chưa xác minh build Gradle trong bản đóng gói này.
 
-## Kiểm tra
+## 5. Bảo mật khi đưa lên GitHub
 
-```bash
-python -m unittest discover -s tests -v
-python -m compileall -q api main.py tests
-node --check frontend/app.js
-```
+**Không commit** `.env`, token Admin, số điện thoại thật, tệp `.db`, file keystore, backup, API key, mật khẩu cá nhân hoặc `local.properties`. Mẫu `.env.example` chỉ chứa placeholder. Bản demo yêu cầu tạo Admin khi chạy lần đầu.
 
-Bộ kiểm tra gồm tách phiên, đọc CV chéo, CSRF, Origin, upload không hợp lệ/quá lớn,
-dọn file tạm, xóa dữ liệu liên quan, ứng tuyển trùng và phân trang.
-
-Kiểm thử trình duyệt:
-
-```bash
-npm install
-npx playwright install chromium
-npm run test:ui
-```
-
-CI chạy kiểm thử API và luồng giao diện, kiểm tra tràn ngang trên điện thoại,
-lưu ảnh chụp thực tế sau khi kiểm tra thành công.
-
-## Hình ảnh
-
-![Giao diện máy tính](docs/screenshots/desktop.png)
-
-<details><summary>Giao diện điện thoại</summary>
-
-![Giao diện điện thoại](docs/screenshots/mobile.png)
-
-</details>
-
-## Cấu trúc
-
-- `api/main.py`: các route kế thừa và mở rộng.
-- `api/db_utils.py`: schema, migration và truy vấn dữ liệu.
-- `api/workspace_security.py`: phiên, CSRF và kiểm tra chủ sở hữu.
-- `api/upload_safety.py`: đọc PDF có giới hạn và tạo file tạm.
-- `api/providers.py`: nạp phần phân tích bên ngoài khi cần.
-- `frontend/`: giao diện mới bằng HTML/CSS/JavaScript, không dùng template gốc.
-- `data/demo_jobs.jsonl`: dữ liệu mẫu hư cấu.
-- `tests/`: kiểm thử API và trình duyệt.
-
-## Giấy phép và ghi nhận
-
-Giữ nguyên [MIT License](LICENSE), gồm bản quyền của Trịnh Văn Hào.
-Mã backend kế thừa từ [TalentBridge](https://github.com/Trinhvhao/TalentBridge),
-commit `acb5ad12bb8108c28c0058f997b0595633aad216`.
-
-Phần nâng cấp và thương hiệu YangCareer do Nguyễn Hồng Giang phát triển trên nền đó;
-repository này không được trình bày là toàn bộ mã gốc do Nguyễn Hồng Giang viết.
+Xem [SECURITY.md](SECURITY.md). Giấy phép sử dụng nguồn (LICENSE) chưa được chủ dự án chỉ định.

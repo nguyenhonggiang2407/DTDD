@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.appbar.MaterialToolbar xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/toolbar"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize"
+    android:background="@color/cm_navy"
+    android:elevation="2dp"
+    android:theme="@style/ThemeOverlay.CourtMate.Toolbar"
+    app:navigationIcon="@drawable/ic_arrow_back"
+    app:navigationIconTint="@color/white"
+    app:subtitleTextColor="@color/white_70"
+    app:titleTextColor="@color/white"
+    tools:ignore="Overdraw" />

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_courts"
+        android:title="@string/title_courts"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_customers"
+        android:title="@string/title_customers"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_stats"
+        android:icon="@drawable/ic_stats"
+        android:title="@string/title_stats"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_management"
+        android:title="@string/management_title"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_calendar"
+        android:title="@string/calendar_view"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_export"
+        android:title="@string/export_csv"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_settings"
+        android:title="@string/action_settings"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_about"
+        android:title="@string/title_about"
+        app:showAsAction="never" />
+</menu>

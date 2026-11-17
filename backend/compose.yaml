@@ -1,0 +1,17 @@
+services:
+  courtmate-api:
+    build: .
+    # Not public. Put a real HTTPS reverse proxy and monitoring in front.
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+    environment:
+      COURTMATE_DB: /data/courtmate_cloud.db
+      COURTMATE_ADMIN_TOKEN: ${COURTMATE_ADMIN_TOKEN:?Please set a strong admin token}
+      COURTMATE_PUBLIC_BOOKING: ${COURTMATE_PUBLIC_BOOKING:-false}
+      COURTMATE_GATEWAY_WEBHOOK_SECRET: ${COURTMATE_GATEWAY_WEBHOOK_SECRET:-}
+      COURTMATE_PAYMENT_URL_TEMPLATE: ${COURTMATE_PAYMENT_URL_TEMPLATE:-}
+    volumes:
+      - courtmate_data:/data
+volumes:
+  courtmate_data:

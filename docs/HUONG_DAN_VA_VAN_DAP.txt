@@ -1,0 +1,2045 @@
+================================================================================
+COURTMATE - TÀI LIỆU HƯỚNG DẪN SỬ DỤNG, GIẢI THÍCH MÃ NGUỒN VÀ ÔN VẤN ĐÁP
+================================================================================
+
+Dự án : CourtMate - Ứng dụng quản lý sân Pickleball
+Package: com.example.courtmatepickleballcourtmanager
+Ngôn ngữ: Java (Android)
+Tài liệu: Dùng cho báo cáo, thuyết trình và vấn đáp đồ án
+
+Mục lục
+--------
+PHẦN 1  - TỔNG QUAN DỰ ÁN
+PHẦN 2  - KIẾN TRÚC VÀ TỔ CHỨC MÃ NGUỒN
+PHẦN 3  - CƠ SỞ DỮ LIỆU
+PHẦN 4  - HƯỚNG DẪN CHI TIẾT TỪNG CHỨC NĂNG
+PHẦN 5  - LUỒNG NGHIỆP VỤ VÀ CÔNG THỨC
+PHẦN 6  - GIẢI THÍCH CÁC LỚP MÃ NGUỒN QUAN TRỌNG
+PHẦN 7  - CÀI ĐẶT, CHẠY VÀ KIỂM THỬ
+PHẦN 8  - BỘ CÂU HỎI VẤN ĐÁP
+PHẦN 9  - KỊCH BẢN DEMO
+PHẦN 10 - HẠN CHẾ VÀ HƯỚNG PHÁT TRIỂN
+PHỤ LỤC A - MÃ LỖI NGHIỆP VỤ
+PHỤ LỤC B - BẢNG TRẠNG THÁI
+PHỤ LỤC C - CHECKLIST TRƯỚC KHI VẤN ĐÁP
+
+
+================================================================================
+PHẦN 1 - TỔNG QUAN DỰ ÁN
+================================================================================
+
+1.1. Mục tiêu
+----------------
+CourtMate là ứng dụng Android quản lý sân Pickleball dành cho chủ sân/nhân viên
+vận hành. Ứng dụng hỗ trợ:
+- Quản lý sân, khách hàng, lịch đặt sân.
+- Quản lý phiên chơi đặt trước và phiên vãng lai.
+- Bán dịch vụ, cho thuê thiết bị, quản lý tồn kho.
+- Quản lý huấn luyện viên, lớp học, sự kiện, khuyến mãi, ngày đặc biệt.
+- Tính tiền, thu tiền mặt/QR nội bộ, in hoặc chia sẻ hóa đơn PDF.
+- Thống kê doanh thu, công nợ, khách hàng thân thiết, giờ cao điểm.
+- Điều khiển đèn sân qua ESP32 hoặc Home Assistant, tự động tắt sau khi hết giờ.
+- Sao lưu, khôi phục cơ sở dữ liệu và ghi nhật ký thao tác.
+
+1.2. Công nghệ sử dụng
+----------------------
+- Android SDK, Java 11.
+- Gradle Kotlin DSL: build.gradle.kts, app/build.gradle.kts, settings.gradle.kts.
+- compileSdk 37, minSdk 24, targetSdk 34, versionName 1.0.
+- Thư viện chính:
+  + androidx.appcompat
+  + androidx.recyclerview
+  + com.google.android.material
+  + androidx.swiperefreshlayout
+  + androidx.cardview
+  + com.google.zxing:core:3.5.3 (sinh mã QR)
+- Lưu trữ: SQLite thông qua SQLiteOpenHelper.
+- Không dùng backend/API bên ngoài; dữ liệu lưu cục bộ trên thiết bị.
+- Đèn sân giao tiếp HTTP với ESP32 hoặc Home Assistant.
+
+1.3. Tác giả
+-------------
+Nhóm số 2.
+Thành viên:
+- Đào Đức Bình
+- Nguyễn Đức Kiên
+- Nguyễn Hồng Giang
+- Lê Thị Xuyến
+- Nguyễn Hữu Cảnh
+- Hoàng Hữu Nhật Anh
+
+Thông tin này được khai báo trong:
+- app/src/main/res/values/strings.xml: about_author, about_members.
+- AboutActivity.java và activity_about.xml.
+
+1.4. Lưu ý về tài liệu cũ
+--------------------------
+README.md từng ghi DB_VERSION = 5, nhưng mã nguồn hiện tại là DB_VERSION = 6.
+Khi báo cáo/vấn đáp, lấy mã nguồn làm chuẩn: cơ sở dữ liệu phiên bản 6.
+
+
+================================================================================
+PHẦN 2 - KIẾN TRÚC VÀ TỔ CHỨC MÃ NGUỒN
+================================================================================
+
+2.1. Kiến trúc tổng quát
+-------------------------
+Ứng dụng theo hướng tách lớp đơn giản, phù hợp đồ án Android:
+- Activity: điều khiển màn hình, nhận thao tác người dùng.
+- Adapter: đổ dữ liệu vào RecyclerView.
+- Model: lớp dữ liệu thuần (POJO) ánh xạ bảng/cột.
+- Data: DatabaseHelper - toàn bộ truy cập SQLite và nghiệp vụ dữ liệu.
+- Util: tiện ích dùng chung (thời gian, tiền, QR, PDF, backup, đèn).
+- Receiver: nhận alarm tự động tắt đèn và nhận sự kiện khởi động máy.
+- View: view vẽ biểu đồ cột tùy chỉnh.
+
+Luồng dữ liệu cơ bản:
+Activity -> DatabaseHelper -> SQLite -> Cursor -> Model -> Adapter/View -> Activity
+
+2.2. Cấu trúc package
+----------------------
+app/src/main/java/com/example/courtmatepickleballcourtmanager/
+- Các Activity màn hình chính và màn hình quản lý.
+- data/DatabaseHelper.java: lớp dữ liệu trung tâm, khoảng 3557 dòng.
+- model/: 21 lớp dữ liệu.
+- adapter/: BookingAdapter, CalendarDayAdapter, CourtAdapter, CustomerAdapter.
+- util/: DateTimeUtils, MoneyUtils, PhoneUtils, RentalCalculator,
+  PromotionEngine, QRCodeUtils, InvoiceGenerator, BackupManager,
+  LightScheduler, LightController.
+- receiver/: BootReceiver, LightAutoOffReceiver.
+- view/: BarChartView.
+
+2.3. Điều hướng màn hình
+-------------------------
+- DashboardActivity: màn hình tổng quan, có các nút tắt đến đặt lịch, phiên chơi,
+  timeline, quản lý, thống kê, nhật ký.
+- MainActivity: danh sách lịch đặt, tìm kiếm/lọc, thêm/sửa/hủy/xóa, tạo phiên.
+- ExtendedManagementActivity: trung tâm các chức năng mở rộng:
+  phiên chơi, hóa đơn, dịch vụ, ca vãng lai, thuê thiết bị, HLV, lớp học,
+  sự kiện, khuyến mãi, ngày đặc biệt, cấu hình đèn.
+- SettingsActivity: sao lưu/khôi phục, nhật ký, sổ thanh toán, giới thiệu.
+- Các màn hình còn lại mở từ menu hoặc từ danh sách tương ứng.
+
+2.4. Nguyên tắc truy cập cơ sở dữ liệu
+---------------------------------------
+- DatabaseHelper là singleton: DatabaseHelper.getInstance(context).
+- Mọi thao tác ghi quan trọng dùng transaction (beginTransaction,
+  setTransactionSuccessful, endTransaction) để đảm bảo toàn vẹn.
+- Các thao tác đọc dùng getReadableDatabase(); ghi dùng getWritableDatabase().
+- Cursor luôn được đóng bằng try-with-resources.
+- Các phương thức trả về mã lỗi âm thay vì ném ngoại lệ cho lỗi nghiệp vụ.
+
+2.5. Quy ước dữ liệu
+---------------------
+- Ngày lưu DB: yyyy-MM-dd.
+- Giờ lưu DB: HH:mm.
+- Ngày giờ lưu DB: yyyy-MM-dd HH:mm.
+- Hiển thị ngày: dd/MM/yyyy; ngày giờ: dd/MM/yyyy HH:mm.
+- Tiền lưu bằng số nguyên (đồng), không dùng số thực để tránh sai số.
+- Thứ trong tuần: Thứ 2 = 1, ..., Chủ nhật = 7.
+
+
+================================================================================
+PHẦN 3 - CƠ SỞ DỮ LIỆU
+================================================================================
+
+3.1. DatabaseHelper
+--------------------
+- Kế thừa SQLiteOpenHelper.
+- Tên CSDL: courtmate.db.
+- DB_VERSION = 6.
+- onCreate(): tạo bảng gốc, bảng theo phiên bản, dữ liệu mẫu.
+- onUpgrade(): nâng cấp tăng dần qua các phiên bản 2, 4, 5, 6.
+- Các hằng T_* lưu tên bảng để tránh gõ sai.
+- Các phương thức public bao phủ toàn bộ nghiệp vụ: sân, khách, đặt lịch,
+  phiên chơi, dịch vụ, thuê, lớp, sự kiện, khuyến mãi, đèn, thống kê,
+  thanh toán, nhật ký.
+
+3.2. Danh sách bảng chính
+--------------------------
+Nhóm sân và khách:
+- san: sân (mã sân, tên sân, giá/giờ, trạng thái, ghi chú).
+- khach_hang: khách hàng (họ tên, số điện thoại, trạng thái, ghi chú).
+
+Nhóm đặt lịch và phiên chơi:
+- dat_lich: lịch đặt sân (mã sân, mã khách, ngày, giờ bắt đầu, giờ kết thúc,
+  tổng tiền, trạng thái, ghi chú).
+- gio_vang_lai: khung giờ vãng lai theo thứ (mã sân, thứ, giờ bắt đầu,
+  giờ kết thúc, giá, trạng thái).
+- phien_choi: phiên chơi (mã sân, mã đặt, mã khách, mã giờ vãng lai,
+  loại phiên, bắt đầu, kết thúc, tiền sân, tiền dịch vụ, tiền thuê,
+  giảm sân, giảm dịch vụ, tổng giảm, mã ưu đãi, mã code, tổng thanh toán,
+  trạng thái, trạng thái thanh toán, phương thức thanh toán, mã hóa đơn,
+  mã giao dịch, thời gian thanh toán, ghi chú).
+
+Nhóm dịch vụ và thuê thiết bị:
+- dich_vu: dịch vụ/hàng hóa (tên, loại BAN/THUE, giá, đơn vị, tồn kho,
+  tiền cọc, phí quá hạn, trạng thái).
+- don_dich_vu: đơn dịch vụ gắn với phiên (mã phiên, mã dịch vụ, số lượng,
+  đơn giá, thành tiền, thời gian).
+- phieu_thue: phiếu thuê (mã khách, mã phiên, ngày thuê, hẹn trả, ngày trả,
+  tiền cọc, tiền thuê, phí quá hạn, tiền bồi thường, tiền hoàn cọc,
+  trạng thái, ghi chú).
+- chi_tiet_thue: chi tiết phiếu thuê (mã phiếu, mã dịch vụ, số lượng,
+  đơn giá, đơn vị, phí quá hạn, thành tiền, số lượng đã trả, tình trạng,
+  tiền bồi thường).
+
+Nhóm lớp học:
+- huan_luyen_vien: HLV (họ tên, số điện thoại, chuyên môn, kinh nghiệm,
+  phí theo giờ, trạng thái).
+- lop_hoc: lớp học (tên lớp, mã HLV, mã sân, trình độ, ngày bắt đầu,
+  ngày kết thúc, sức chứa, học phí, trạng thái, ghi chú).
+- lich_lop: lịch lớp theo thứ (mã lớp, thứ, giờ bắt đầu, giờ kết thúc).
+- dang_ky_lop: đăng ký lớp (mã lớp, mã khách, ngày đăng ký, học phí,
+  tiền giảm, mã ưu đãi, đã thanh toán, trạng thái).
+
+Nhóm sự kiện:
+- su_kien: sự kiện (tên, loại, mô tả, ngày bắt đầu, ngày kết thúc,
+  hạn đăng ký, lệ phí, sức chứa, lặp lại hàng năm, trạng thái).
+- su_kien_san: sân sử dụng cho sự kiện (mã sự kiện, mã sân).
+- lich_su_kien: lịch sự kiện (mã sự kiện, mã sân, ngày, giờ bắt đầu,
+  giờ kết thúc, nội dung).
+- dang_ky_su_kien: đăng ký sự kiện (mã sự kiện, mã khách, ngày đăng ký,
+  lệ phí, tiền giảm, mã ưu đãi, đã thanh toán, trạng thái).
+
+Nhóm khuyến mãi và ngày đặc biệt:
+- uu_dai: khuyến mãi (tên, loại giảm PHAN_TRAM/SO_TIEN, giá trị, phạm vi,
+  giá trị đơn tối thiểu, giảm tối đa, từ ngày, đến ngày, lặp lại hàng năm,
+  mã code, trạng thái, ghi chú).
+- uu_dai_dip: liên kết khuyến mãi - ngày đặc biệt.
+- dip_dac_biet: ngày đặc biệt (tên, loại, tháng, ngày, năm, mã sân,
+  lặp lại hàng năm, trạng thái).
+
+Nhóm thanh toán, nhật ký, cấu hình đèn:
+- thanh_toan: sổ thanh toán (loại đối tượng, mã đối tượng, loại giao dịch,
+  số tiền, phương thức, mã giao dịch, thời gian, ghi chú).
+- nhat_ky_hoat_dong: nhật ký thao tác (thời gian, loại thao tác, đối tượng,
+  mã đối tượng, giá trị cũ, giá trị mới, kết quả, người thực hiện).
+- cau_hinh_den: cấu hình đèn theo sân (mã sân, loại ESP32/HOME_ASSISTANT,
+  URL bật, URL tắt, entity id, token, phương thức, timeout, trạng thái,
+  lỗi cuối, tự động tắt, phút trễ).
+
+3.3. Nâng cấp CSDL (migration)
+------------------------------
+- Phiên bản 2: bổ sung các bảng nghiệp vụ mở rộng (dịch vụ, thuê, lớp, sự kiện,
+  khuyến mãi, thanh toán, nhật ký...).
+- Phiên bản 4: bổ sung các cột/ bảng phục vụ thanh toán QR nội bộ và cấu hình
+  đèn (ví dụ cột phương thức thanh toán mới, bảng cấu hình đèn).
+- Phiên bản 5: bổ sung tự động tắt đèn, phút trễ, các trường phục vụ lịch.
+- Phiên bản 6: bổ sung các trường phục vụ sự kiện lặp năm, khuyến mãi theo
+  ngày đặc biệt, hoàn thiện sổ thanh toán.
+Nguyên tắc migration: additive (thêm bảng/cột), không xóa dữ liệu cũ.
+Khi nâng cấp, dữ liệu hiện có được giữ nguyên.
+
+3.4. Dữ liệu mẫu
+-----------------
+onCreate() chèn dữ liệu mẫu ban đầu để ứng dụng có thể dùng ngay:
+- Một số sân Pickleball với giá giờ.
+- Một số khách hàng mẫu.
+- Một số dịch vụ bán và dịch vụ thuê (nước uống, vợt, bóng...).
+- Có thể có HLV, lớp, sự kiện, khuyến mãi mẫu tùy phiên bản.
+Dữ liệu mẫu giúp demo nhanh, nhưng khi vấn đáp cần phân biệt rõ dữ liệu mẫu
+và dữ liệu người dùng nhập.
+
+3.5. Toàn vẹn dữ liệu
+----------------------
+- Khóa chính tự tăng cho hầu hết bảng.
+- Khóa ngoại logic giữa các bảng (ví dụ dat_lich.ma_san -> san.ma_san).
+- Kiểm tra nghiệp vụ trước khi ghi: trùng lịch, trùng phiên, vượt sức chứa,
+  thiếu tồn kho, sai trạng thái.
+- Transaction đảm bảo các bước liên quan cùng thành công hoặc cùng hủy.
+- Xóa dịch vụ đang được tham chiếu sẽ bị chặn bằng ERROR_REFERENCED.
+- Xóa sân/khách có thể bị chặn nếu còn dữ liệu liên quan (tùy phương thức).
+
+3.6. Sao lưu và khôi phục
+--------------------------
+- BackupManager sao lưu tệp courtmate.db ra URI do người dùng chọn.
+- Trước khi sao lưu, dùng DatabaseHelper.backupDatabase() để tạo bản sao nhất quán.
+- Kiểm tra bản sao: đọc phiên bản CSDL, kiểm tra bảng bắt buộc, chạy
+  PRAGMA quick_check.
+- Khôi phục: sao chép tệp người dùng chọn vào vùng đệm, kiểm tra hợp lệ,
+  sao lưu dữ liệu hiện tại (safety), thay thế CSDL, xóa các tệp -wal/-shm/-journal,
+  kiểm tra lại; nếu lỗi thì khôi phục bản safety.
+- Không khôi phục tệp có phiên bản CSDL lớn hơn phiên bản ứng dụng hỗ trợ.
+
+3.7. Mã lỗi nghiệp vụ
+----------------------
+ERROR_OVERLAP          = -2  : trùng lịch đặt.
+ERROR_COURT_UNAVAILABLE= -3  : sân không tồn tại hoặc đang bảo trì.
+ERROR_SESSION_OVERLAP  = -4  : trùng phiên đang chơi.
+ERROR_OUTSIDE_WALKIN   = -5  : thời điểm không nằm trong khung vãng lai.
+ERROR_COURT_BUSY       = -6  : sân bận do lớp/sự kiện/phiên khác.
+ERROR_STOCK            = -7  : không đủ tồn kho.
+ERROR_CAPACITY         = -8  : vượt sức chứa lớp/sự kiện.
+ERROR_INVALID          = -9  : dữ liệu/trạng thái không hợp lệ.
+ERROR_REFERENCED       = -10 : bản ghi đang được tham chiếu, không thể xóa.
+ERROR                  = -1  : lỗi chung.
+
+Quy ước: phương thức trả về long/int; nếu > 0 là thành công (id hoặc số dòng),
+nếu < 0 là mã lỗi. Riêng một số phương thức trả về 0 khi không có dòng nào.
+
+
+================================================================================
+PHẦN 4 - HƯỚNG DẪN CHI TIẾT TỪNG CHỨC NĂNG
+================================================================================
+
+4.1. DashboardActivity - Tổng quan
+-----------------------------------
+Mục đích: màn hình điều hướng nhanh và hiển thị số liệu tổng quan trong ngày.
+Chức năng:
+- Xem số sân, số lịch đặt hôm nay, doanh thu tạm tính, công nợ.
+- Nút đến Danh sách đặt lịch (MainActivity).
+- Nút đến Phiên chơi/Quản lý (ExtendedManagementActivity).
+- Nút đến Timeline sân (CourtTimelineActivity).
+- Nút đến Thống kê (StatisticsActivity).
+- Nút đến Nhật ký hoạt động (AuditLogActivity).
+- Menu mở Sân, Khách hàng, Thống kê, Quản lý mở rộng, Timeline, Lịch tháng,
+  Cài đặt, Giới thiệu.
+Cách dùng: mở ứng dụng, quan sát số liệu, chọn nút tương ứng.
+Mã nguồn: DashboardActivity.java; dữ liệu lấy từ DatabaseHelper qua các hàm
+thống kê và danh sách.
+
+4.2. MainActivity - Danh sách và tìm kiếm lịch đặt
+----------------------------------------------------
+Mục đích: quản lý toàn bộ lịch đặt sân.
+Chức năng:
+- Hiển thị danh sách lịch đặt theo ngày, sân, trạng thái.
+- Tìm kiếm theo tên khách hoặc số điện thoại.
+- Lọc theo ngày, theo sân, theo trạng thái.
+- Tìm kiếm nâng cao theo khoảng ngày.
+- Thêm lịch đặt mới bằng nút FAB.
+- Nhấn vào lịch để xem/sửa/xóa/hủy hoặc bắt đầu phiên chơi.
+- Làm mới danh sách bằng SwipeRefreshLayout.
+Cách dùng:
+1) Mở MainActivity từ Dashboard.
+2) Dùng ô tìm kiếm hoặc bộ lọc để thu hẹp danh sách.
+3) Nhấn FAB "+" để tạo lịch mới.
+4) Nhấn một dòng để mở các thao tác.
+Mã nguồn: MainActivity.java; BookingAdapter.java; DatabaseHelper.searchBookings().
+Lưu ý: tìm kiếm dùng LIKE trên họ tên và số điện thoại, sắp xếp ngày giảm dần,
+giờ bắt đầu tăng dần.
+
+4.3. BookingFormActivity - Thêm/sửa lịch đặt
+----------------------------------------------
+Mục đích: tạo mới hoặc chỉnh sửa lịch đặt sân.
+Trường nhập:
+- Sân (bắt buộc).
+- Ngày (bắt buộc, không được ở quá khứ).
+- Giờ bắt đầu, giờ kết thúc (bắt buộc, giờ kết thúc > giờ bắt đầu).
+- Khách hàng: chọn từ danh sách hoặc nhập tên + số điện thoại.
+- Ghi chú.
+- Các chip tiện ích: Hôm nay, Ngày mai, 60 phút, 90 phút, 120 phút.
+Cách dùng:
+1) Chọn sân.
+2) Chọn ngày, giờ hoặc dùng chip nhanh.
+3) Chọn khách hàng đã có hoặc nhập mới.
+4) Nhấn Lưu.
+Kết quả:
+- Nếu hợp lệ, tạo/cập nhật dat_lich với trạng thái DA_DAT.
+- Tổng tiền được tính tự động theo giá sân và thời lượng.
+- Nếu trùng lịch/trùng phiên/sân bận, hiển thị lỗi tương ứng.
+Mã nguồn: BookingFormActivity.java; DatabaseHelper.insertBooking(),
+updateBooking(), isOverlap(), activeSessionOverlaps(), hasClassRange(),
+hasEventRange().
+Quy tắc:
+- Không cho đặt nếu sân không hoạt động.
+- Không cho đặt trùng khoảng giờ với lịch khác cùng sân.
+- Không cho đặt trùng phiên đang chơi.
+- Không cho đặt trùng lịch lớp hoặc lịch sự kiện.
+- Khách hàng được tìm theo số điện thoại; nếu đã có thì dùng lại, nếu tên khác
+  thì cập nhật tên; nếu chưa có thì tạo mới.
+
+4.4. CourtActivity - Quản lý sân
+----------------------------------
+Mục đích: xem, thêm, sửa, xóa sân.
+Chức năng:
+- Danh sách sân kèm giá giờ, trạng thái, ghi chú.
+- Thêm sân mới.
+- Sửa thông tin sân.
+- Chuyển trạng thái HOAT_DONG/BAO_TRI.
+- Xóa sân nếu không bị ràng buộc.
+- Nhấn vào sân để mở phiên chơi/ CourtSessionActivity.
+Mã nguồn: CourtActivity.java; CourtAdapter.java; DatabaseHelper.getCourts(),
+insertCourt(), updateCourt(), deleteCourt().
+Lưu ý: sân đang bảo trì không thể đặt lịch hoặc bắt đầu phiên.
+
+4.5. CustomerActivity - Quản lý khách hàng
+--------------------------------------------
+Mục đích: quản lý thông tin khách hàng.
+Chức năng:
+- Danh sách khách đang hoạt động.
+- Thêm/sửa khách.
+- Lưu trữ khách (archived) và xem danh sách đã lưu trữ.
+- Gọi điện nhanh qua ACTION_DIAL.
+- Tìm kiếm theo tên/số điện thoại.
+Mã nguồn: CustomerActivity.java; CustomerAdapter.java; DatabaseHelper.
+Quy tắc:
+- Số điện thoại được chuẩn hóa bằng PhoneUtils trước khi lưu.
+- Không tạo trùng khách nếu số điện thoại đã tồn tại.
+- Khách đã có lịch sử giao dịch nên hạn chế xóa cứng; ưu tiên lưu trữ.
+
+4.6. ExtendedManagementActivity - Trung tâm quản lý mở rộng
+------------------------------------------------------------
+Mục đích: gom các chức năng quản lý vào một màn hình.
+Các nút:
+- Phiên chơi (CourtSessionActivity).
+- Hóa đơn (InvoiceActivity).
+- Dịch vụ (ServiceManagementActivity).
+- Ca vãng lai (WalkInSlotActivity).
+- Thuê thiết bị (RentalActivity).
+- Huấn luyện viên (CoachManagementActivity).
+- Lớp học (ClassManagementActivity).
+- Sự kiện (EventManagementActivity).
+- Khuyến mãi (PromotionManagementActivity).
+- Ngày đặc biệt (SpecialDateActivity).
+- Cấu hình đèn (LightConfigActivity).
+Mã nguồn: ExtendedManagementActivity.java.
+
+4.7. CourtSessionActivity - Quản lý phiên chơi
+-----------------------------------------------
+Mục đích: xem các phiên đang chơi và phiên đã kết thúc trong ngày.
+Chức năng:
+- Danh sách phiên đang chơi/đã kết thúc.
+- Bắt đầu phiên từ lịch đặt hoặc phiên vãng lai.
+- Mở chi tiết phiên (SessionDetailActivity).
+- Kết thúc phiên và chuyển sang thanh toán (PaymentActivity).
+- Làm mới danh sách.
+Mã nguồn: CourtSessionActivity.java; DatabaseHelper.getSessionsByDate(),
+getActiveSession(), startBookingSession(), startWalkInSession(), finishSession().
+
+4.8. SessionDetailActivity - Chi tiết phiên chơi
+--------------------------------------------------
+Mục đích: quản lý các khoản phát sinh trong phiên.
+Chức năng:
+- Xem thông tin phiên: sân, khách, giờ bắt đầu/kết thúc, trạng thái.
+- Thêm dịch vụ vào phiên (nước, bóng, phụ kiện...).
+- Thuê thiết bị gắn với phiên.
+- Xem danh sách dịch vụ đã dùng và thiết bị đang thuê.
+- Áp dụng khuyến mãi/mã giảm giá.
+- Xem tạm tính.
+- Kết thúc phiên và thanh toán.
+Mã nguồn: SessionDetailActivity.java; DatabaseHelper.addServiceOrder(),
+createRental(), getRentalsForSession(), applySessionDiscount(),
+previewSessionTotal(), finishSession().
+Quy tắc:
+- Chỉ thêm dịch vụ khi phiên đang chơi.
+- Số lượng dịch vụ không vượt tồn kho.
+- Dịch vụ thuê phải có loại THUE và còn tồn.
+- Khuyến mãi được chọn tốt nhất hoặc nhập mã.
+
+4.9. PaymentActivity - Thanh toán
+----------------------------------
+Mục đích: thu tiền cho phiên chơi đã kết thúc.
+Chức năng:
+- Hiển thị tổng tiền: tiền sân + dịch vụ + thuê - giảm giá.
+- Chọn phương thức: tiền mặt hoặc QR nội bộ.
+- Với QR: sinh mã QR từ nội dung thanh toán bằng ZXing.
+- Xác nhận thanh toán, tạo hóa đơn.
+- Mở/xem/chia sẻ hóa đơn PDF.
+Mã nguồn: PaymentActivity.java; QRCodeUtils.java; DatabaseHelper.markSessionPaid().
+Quy tắc:
+- Chỉ thanh toán khi phiên đã kết thúc.
+- Không thanh toán lặp nếu đã thanh toán.
+- Mã hóa đơn: HD + yyyyMMdd + "-" + mã phiên 5 chữ số.
+- Phương thức QR nội bộ được lưu ở cột mới; cột cũ chỉ nhận TIEN_MAT/MOMO
+  để tương thích ràng buộc CHECK của phiên bản CSDL cũ.
+- Mỗi lần thanh toán tạo một bản ghi trong thanh_toan và một dòng nhật ký.
+
+4.10. InvoiceActivity - Danh sách hóa đơn
+-------------------------------------------
+Mục đích: xem các phiên đã kết thúc/đã thanh toán và hóa đơn tương ứng.
+Chức năng:
+- Danh sách phiên đã kết thúc.
+- Xem chi tiết hóa đơn.
+- Mở lại màn hình thanh toán nếu chưa thanh toán.
+- Tạo/chia sẻ PDF.
+Mã nguồn: InvoiceActivity.java; InvoiceGenerator.java;
+DatabaseHelper.getRecentFinishedSessions().
+
+4.11. ServiceManagementActivity - Quản lý dịch vụ
+---------------------------------------------------
+Mục đích: quản lý hàng hóa/dịch vụ bán và cho thuê.
+Chức năng:
+- Danh sách dịch vụ: tên, loại, giá, đơn vị, tồn kho, trạng thái.
+- Thêm/sửa dịch vụ.
+- Nhập kho (tăng số lượng tồn).
+- Xóa dịch vụ nếu chưa được dùng.
+Mã nguồn: ServiceManagementActivity.java; DatabaseHelper.getServices(),
+insertService(), updateService(), deleteService(), changeStock().
+Quy tắc:
+- Loại BAN: bán trực tiếp, trừ tồn khi thêm vào phiên.
+- Loại THUE: cho thuê, có tiền cọc và phí quá hạn, trừ tồn khi tạo phiếu thuê.
+- Không xóa dịch vụ đã xuất hiện trong don_dich_vu hoặc chi_tiet_thue.
+
+4.12. WalkInSlotActivity - Khung giờ vãng lai
+-----------------------------------------------
+Mục đích: cấu hình các khung giờ khách vãng lai được phép vào chơi.
+Chức năng:
+- Danh sách khung giờ theo sân và thứ.
+- Thêm/sửa/xóa khung giờ.
+- Đặt giá riêng cho khung giờ.
+- Bật/tắt trạng thái áp dụng.
+Mã nguồn: WalkInSlotActivity.java; DatabaseHelper.getWalkInSlots(),
+insertWalkInSlot(), updateWalkInSlot(), deleteWalkInSlot().
+Quy tắc:
+- Các khung giờ cùng sân, cùng thứ không được chồng lấn.
+- Chỉ được bắt đầu phiên vãng lai nếu thời điểm hiện tại nằm trong khung
+  đang áp dụng.
+- Giá khung giờ được dùng làm đơn giá/giờ cho phiên vãng lai.
+
+4.13. RentalActivity - Thuê và trả thiết bị
+---------------------------------------------
+Mục đích: quản lý phiếu thuê thiết bị.
+Chức năng:
+- Danh sách phiếu thuê theo trạng thái: DANG_THUE, QUA_HAN, DA_TRA.
+- Tạo phiếu thuê: chọn khách, chọn thiết bị, số lượng, hẹn trả.
+- Tính tiền cọc và tiền thuê.
+- Trả toàn bộ hoặc trả từng phần.
+- Tính phí quá hạn, bồi thường hư hỏng, hoàn cọc.
+- Cập nhật tồn kho khi thuê/trả.
+- Gắn phiếu thuê với phiên chơi nếu có.
+Mã nguồn: RentalActivity.java; RentalCalculator.java;
+DatabaseHelper.createRental(), getRentals(), getRentalItems(),
+returnRental(), returnRentalItem(), refreshOverdueRentals().
+Quy tắc:
+- Chỉ dịch vụ loại THUE mới được thuê.
+- Không thuê quá tồn kho.
+- Tiền cọc = tổng (cọc đơn vị * số lượng).
+- Tiền thuê = tổng (giá thuê * số lượng).
+- Khi trả đủ: hoàn cọc = max(0, cọc - phí quá hạn - bồi thường).
+- Trả một phần: chưa hoàn cọc, phiếu vẫn DANG_THUE.
+- Khi trả đủ, phiếu chuyển DA_TRA và cập nhật lại tiền thuê của phiên.
+
+4.14. CoachManagementActivity - Huấn luyện viên
+------------------------------------------------
+Mục đích: quản lý HLV.
+Chức năng:
+- Danh sách HLV: họ tên, điện thoại, chuyên môn, kinh nghiệm, phí/giờ,
+  trạng thái.
+- Thêm/sửa/xóa HLV.
+Mã nguồn: CoachManagementActivity.java; DatabaseHelper.getCoaches(),
+insertCoach(), updateCoach(), deleteCoach().
+Lưu ý: HLV đang được lớp học tham chiếu thì không nên xóa; nếu xóa có thể
+ảnh hưởng hiển thị lớp.
+
+4.15. ClassManagementActivity - Lớp học
+-----------------------------------------
+Mục đích: quản lý lớp, lịch học, học viên.
+Chức năng:
+- Danh sách lớp: tên, HLV, sân, trình độ, thời gian, sức chứa, học phí,
+  số đã đăng ký, trạng thái.
+- Thêm/sửa lớp.
+- Cấu hình lịch học theo thứ và giờ.
+- Đăng ký học viên.
+- Hủy đăng ký, đánh dấu đã thanh toán.
+- Xem danh sách học viên.
+Mã nguồn: ClassManagementActivity.java; DatabaseHelper.getClassRoom(),
+insertClassRoom(), updateClassRoom(), saveClassSchedules(),
+registerForClass(), cancelClassEnrollment(), markClassEnrollmentPaid().
+Quy tắc:
+- Lớp đã hủy/kết thúc không nhận đăng ký.
+- Không đăng ký vượt sức chứa.
+- Một khách không đăng ký trùng một lớp khi đang DANG_KY.
+- Học phí lấy theo lớp tại thời điểm đăng ký.
+- Tiền giảm không vượt học phí.
+- Lịch lớp chiếm sân nên lịch đặt/phiên khác không được trùng giờ.
+
+4.16. EventManagementActivity - Sự kiện
+----------------------------------------
+Mục đích: quản lý sự kiện/giải đấu.
+Chức năng:
+- Danh sách sự kiện: tên, loại, thời gian, hạn đăng ký, lệ phí, sức chứa,
+  số đã đăng ký, trạng thái.
+- Thêm/sửa sự kiện.
+- Chọn sân sử dụng.
+- Cấu hình lịch sự kiện theo ngày/giờ/nội dung.
+- Đăng ký người tham gia.
+- Hủy đăng ký, đánh dấu đã thanh toán.
+- Nhân bản sự kiện sang năm sau.
+Mã nguồn: EventManagementActivity.java; DatabaseHelper.getEvents(),
+insertEvent(), updateEvent(), saveEventCourts(), saveEventSchedules(),
+registerForEvent(), cancelEventRegistration(),
+markEventRegistrationPaid(), duplicateEventToNextYear().
+Quy tắc:
+- Sự kiện đã hủy/kết thúc không nhận đăng ký.
+- Không vượt sức chứa (nếu sức chứa > 0).
+- Một khách không đăng ký trùng khi đang DANG_KY.
+- Sự kiện chiếm sân nên chặn đặt lịch/phiên trùng giờ.
+- Nhân bản sang năm sau: cộng 1 năm vào ngày bắt đầu, kết thúc, hạn đăng ký
+  và lịch; trạng thái SAP_DIEN_RA; giữ sân và lịch.
+
+4.17. PromotionManagementActivity - Khuyến mãi
+-----------------------------------------------
+Mục đích: quản lý chương trình giảm giá.
+Chức năng:
+- Danh sách khuyến mãi: tên, loại giảm, giá trị, phạm vi, thời gian,
+  mã code, trạng thái.
+- Thêm/sửa khuyến mãi.
+- Gán khuyến mãi với ngày đặc biệt để tự động áp dụng.
+- Bật/tắt trạng thái.
+Mã nguồn: PromotionManagementActivity.java; PromotionEngine.java;
+DatabaseHelper.getPromotions(), insertPromotion(), updatePromotion(),
+getAutomaticPromotions(), savePromotionSpecialDates().
+Quy tắc:
+- Giảm theo phần trăm hoặc số tiền.
+- Có giá trị đơn tối thiểu.
+- Có giảm tối đa (với phần trăm).
+- Có phạm vi: sân, dịch vụ, lớp, sự kiện, tất cả.
+- Chỉ áp dụng khi đang HOAT_DONG và trong khoảng từ ngày/đến ngày.
+- Khuyến mãi gắn ngày đặc biệt chỉ tự động áp dụng đúng tháng/ngày
+  (và đúng năm nếu không lặp hàng năm).
+
+4.18. SpecialDateActivity - Ngày đặc biệt
+------------------------------------------
+Mục đích: quản lý ngày lễ/kỷ niệm để kích hoạt khuyến mãi tự động.
+Chức năng:
+- Danh sách ngày đặc biệt: tên, loại, tháng/ngày/năm, sân áp dụng,
+  lặp hàng năm, trạng thái.
+- Thêm/sửa/xóa.
+Mã nguồn: SpecialDateActivity.java; DatabaseHelper.getSpecialDates(),
+insertSpecialDate(), updateSpecialDate(), deleteSpecialDate().
+Quy tắc:
+- Lặp hàng năm: năm để trống, so khớp theo tháng/ngày.
+- Không lặp: so khớp cả năm.
+- Có thể giới hạn theo một sân hoặc áp dụng tất cả sân.
+
+4.19. CalendarViewActivity - Lịch tháng
+----------------------------------------
+Mục đích: xem lịch đặt theo tháng.
+Chức năng:
+- Hiển thị lưới ngày trong tháng.
+- Mỗi ngày hiển thị số lịch đặt.
+- Nhấn ngày để mở danh sách lịch đặt của ngày đó.
+- FAB thêm lịch nhanh.
+Mã nguồn: CalendarViewActivity.java; CalendarDayAdapter.java;
+DatabaseHelper.countBookingsByDay()/searchBookings().
+
+4.20. CourtTimelineActivity - Timeline sân
+-------------------------------------------
+Mục đích: xem trực quan các lịch đặt/phiên chơi theo sân và giờ.
+Chức năng:
+- Chọn ngày trước/sau/hôm nay.
+- Hiển thị các khối lịch theo sân và khung giờ.
+- Phát hiện khoảng trống, khoảng bận.
+Mã nguồn: CourtTimelineActivity.java; DatabaseHelper.getSessionsByDate(),
+searchBookings().
+Lợi ích: giúp nhân viên chọn giờ trống nhanh, tránh trùng lịch.
+
+4.21. StatisticsActivity - Thống kê
+------------------------------------
+Mục đích: báo cáo doanh thu và hiệu quả kinh doanh.
+Chức năng:
+- Chọn khoảng thời gian.
+- Xem tổng doanh thu, doanh thu sân, dịch vụ, thuê, lớp, sự kiện.
+- Xem tổng giảm giá, công nợ, tiền cọc đang giữ.
+- Xem doanh thu theo ngày (biểu đồ cột).
+- Xem top sân, top khách hàng.
+- Xem giờ cao điểm.
+Mã nguồn: StatisticsActivity.java; BarChartView.java;
+DatabaseHelper.getRevenueSummary(), revenueByDay(), topCourts(),
+getTopCustomers(), getPeakHours(), getReceivable(), getDepositsHeld().
+Lưu ý: doanh thu trong RevenueSummary chỉ tính phiên đã kết thúc và đã thanh toán
+(trừ một số mục lớp/sự kiện đã thanh toán, thuê đã trả); công nợ tính riêng.
+
+4.22. SettingsActivity - Cài đặt
+---------------------------------
+Mục đích: các tiện ích hệ thống.
+Chức năng:
+- Sao lưu CSDL ra tệp.
+- Khôi phục CSDL từ tệp.
+- Xem nhật ký thao tác.
+- Xem sổ thanh toán.
+- Xem giới thiệu.
+Mã nguồn: SettingsActivity.java; BackupManager.java.
+Lưu ý: khôi phục sẽ thay thế toàn bộ dữ liệu hiện tại; nên sao lưu trước.
+
+4.23. LightConfigActivity - Cấu hình đèn
+-----------------------------------------
+Mục đích: cấu hình điều khiển đèn cho từng sân.
+Chức năng:
+- Chọn sân.
+- Chọn loại: ESP32 hoặc HOME_ASSISTANT.
+- Nhập URL bật/tắt (ESP32) hoặc URL gốc Home Assistant.
+- Nhập entity_id, token, phương thức, timeout.
+- Bật/tắt đèn thủ công để kiểm tra.
+- Bật tự động tắt sau khi hết giờ, cấu hình phút trễ.
+- Xin quyền báo thức chính xác trên Android 12+.
+Mã nguồn: LightConfigActivity.java; LightController.java;
+LightScheduler.java; DatabaseHelper.getLightConfig(), saveLightConfig(),
+updateLightStatus().
+Quy tắc:
+- Chưa cấu hình đèn thì không điều khiển được.
+- Home Assistant: POST đến {url gốc}/api/services/light/turn_on|turn_off,
+  body {"entity_id":"..."}, header Authorization Bearer token.
+- ESP32: gọi URL bật/tắt với phương thức đã cấu hình (mặc định GET).
+- Tự động tắt chỉ áp dụng cho lịch đặt trạng thái DA_DAT và sân có bật autoOff.
+
+4.24. AuditLogActivity - Nhật ký
+---------------------------------
+Mục đích: xem lịch sử thao tác.
+Chức năng:
+- Danh sách nhật ký mới nhất: thời gian, thao tác, đối tượng, giá trị cũ/mới,
+  kết quả, người thực hiện.
+Mã nguồn: AuditLogActivity.java; DatabaseHelper.getRecentActivities(),
+logActivity().
+Lưu ý: logActivity bọc trong try/catch, lỗi ghi nhật ký không làm hỏng nghiệp vụ.
+
+4.25. PaymentLedgerActivity - Sổ thanh toán
+--------------------------------------------
+Mục đích: xem các giao dịch thanh toán gần đây.
+Chức năng:
+- Danh sách giao dịch: loại đối tượng, mã đối tượng, loại giao dịch,
+  số tiền, phương thức, thời gian, ghi chú.
+Mã nguồn: PaymentLedgerActivity.java; DatabaseHelper.getRecentPayments().
+
+4.26. AboutActivity - Giới thiệu
+---------------------------------
+Mục đích: hiển thị thông tin ứng dụng, phiên bản, tác giả, thành viên.
+Mã nguồn: AboutActivity.java; activity_about.xml; strings.xml.
+Thông tin tác giả: Nhóm số 2 và 6 thành viên đã nêu ở mục 1.3.
+
+
+================================================================================
+PHẦN 5 - LUỒNG NGHIỆP VỤ VÀ CÔNG THỨC
+================================================================================
+
+5.1. Luồng đặt lịch
+--------------------
+Bước 1: Người dùng nhập sân, ngày, giờ bắt đầu, giờ kết thúc, khách, ghi chú.
+Bước 2: Activity kiểm tra dữ liệu bắt buộc, giờ hợp lệ, ngày không ở quá khứ.
+Bước 3: Gọi DatabaseHelper.insertBooking() hoặc updateBooking().
+Bước 4: Trong transaction, DatabaseHelper kiểm tra:
+  (a) Sân tồn tại và đang HOAT_DONG.
+  (b) Trùng lịch đặt cùng sân/ngày/giờ.
+  (c) Trùng phiên đang chơi.
+  (d) Trùng lịch lớp hoặc lịch sự kiện.
+Bước 5: Tìm hoặc tạo khách theo số điện thoại.
+Bước 6: Tính tổng tiền và ghi dat_lich với trạng thái DA_DAT.
+Bước 7: Trả về id mới hoặc mã lỗi.
+
+Điều kiện trùng lịch đặt (isOverlap):
+  ma_san = ? AND ngay = ? AND trang_thai = 'DA_DAT'
+  AND gio_bat_dau < giờ_kết_thúc_mới
+  AND gio_ket_thuc > giờ_bắt_đầu_mới
+  AND ma_dat <> id_đang_sửa
+Đây là điều kiện chồng lấn nửa mở [start, end), cho phép lịch kết thúc đúng
+bằng giờ bắt đầu của lịch khác.
+
+Kiểm tra phiên đang chơi (activeSessionOverlaps):
+- Nếu sân có phiên DANG_CHOI:
+  + Nếu lịch mới kết thúc trước hoặc bằng giờ bắt đầu phiên thì không trùng.
+  + Nếu phiên vãng lai chưa có giờ kết thúc, coi như sân bận trong 2 giờ tới
+    để chặn lịch đặt sát giờ, kể cả phiên qua 0h.
+  + Nếu cùng ngày, so sánh khoảng giờ.
+  + Nếu khác ngày, mặc định không trùng (trừ trường hợp đã bị chặn bởi 2 giờ tới).
+
+Kiểm tra lớp/sự kiện:
+- hasClassRange: lịch lớp cùng sân, cùng thứ, chồng giờ, lớp đang
+  MO_DANG_KY/DANG_HOC và nằm trong khoảng ngày của lớp.
+- hasEventRange: lịch sự kiện cùng sân, cùng ngày, chồng giờ, sự kiện không
+  KET_THUC/HUY.
+- Nếu trùng, trả ERROR_COURT_BUSY.
+
+Công thức tiền đặt lịch:
+  durationMinutes = số phút từ giờ bắt đầu đến giờ kết thúc.
+  hours = durationMinutes / 60.0.
+  tổng tiền = round(hours * giá_giờ / 1000) * 1000.
+Tức làm tròn đến hàng nghìn đồng gần nhất.
+
+5.2. Luồng khách vãng lai
+--------------------------
+Bước 1: Cấu hình khung giờ vãng lai trong WalkInSlotActivity.
+Bước 2: Khi khách vào, chọn sân và khách (có thể không có khách).
+Bước 3: Gọi startWalkInSession(courtId, customerId, startDateTime).
+Bước 4: DatabaseHelper:
+  - Kiểm tra sân hoạt động.
+  - Tìm khung giờ vãng lai đang áp dụng theo thứ và giờ.
+  - Nếu không có, trả ERROR_OUTSIDE_WALKIN.
+  - Kiểm tra sân không có phiên đang chơi.
+  - Kiểm tra không trùng lịch đặt/lớp/sự kiện tại thời điểm bắt đầu.
+  - Tạo phien_choi loại VANG_LAI, trạng thái DANG_CHOI,
+    đơn giá vãng lai = giá khung giờ.
+Bước 5: Khi kết thúc, tính tiền sân theo thời lượng thực tế.
+
+5.3. Luồng bắt đầu phiên từ lịch đặt
+--------------------------------------
+- Gọi startBookingSession(bookingId).
+- Kiểm tra lịch tồn tại và không bị hủy.
+- Kiểm tra sân chưa có phiên đang chơi.
+- Tạo phien_choi loại DAT_TRUOC, gắn ma_dat, ma_kh, bắt đầu = ngày + giờ bắt đầu,
+  tiền sân = tổng tiền lịch đặt, trạng thái DANG_CHOI.
+- Lịch đặt vẫn giữ trạng thái DA_DAT (không đổi) để thống kê lịch.
+
+5.4. Luồng kết thúc phiên
+--------------------------
+Gọi finishSession(sessionId, endDateTime).
+- Chỉ kết thúc phiên chưa kết thúc.
+- Tính lại tiền sân:
+  + Phiên DAT_TRUOC: giữ tiền sân đã ghi.
+  + Phiên VANG_LAI: tính theo đơn giá vãng lai và thời lượng thực tế.
+- Tiền dịch vụ = tổng thành tiền các đơn dịch vụ của phiên.
+- Tiền thuê = tổng tiền thuê các phiếu thuê gắn phiên.
+- Tổng thanh toán = max(0, tiền sân + tiền dịch vụ + tiền thuê
+  - giảm sân - giảm dịch vụ).
+- Ghi ket_thuc, các khoản tiền, tổng giảm, tổng thanh toán, trạng thái DA_KET_THUC.
+
+Công thức tiền phiên vãng lai:
+  duration = số phút giữa bắt đầu và kết thúc.
+  hours = duration / 60.0.
+  tiền sân = round_to_thousand(round(hours * đơn_giá_giờ)).
+
+5.5. Luồng thanh toán và hóa đơn
+---------------------------------
+Điều kiện: phiên đã DA_KET_THUC và chưa DA_THANH_TOAN.
+- Nếu chưa có mã hóa đơn, sinh mã:
+  HD + yyyyMMdd + "-" + mã phiên (5 chữ số).
+  Ví dụ: HD20261103-00042.
+- Cập nhật phien_choi:
+  + trang_thai_tt = DA_THANH_TOAN.
+  + phuong_thuc_tt = TIEN_MAT nếu tiền mặt, ngược lại MOMO (cột cũ).
+  + phuong_thuc_tt_moi = phương thức thực tế (TIEN_MAT/QR_NOI_BO).
+  + ma_giao_dich, thoi_gian_tt, ma_hoa_don.
+- Ghi một dòng thanh_toan loại PHIEN, giao dịch THANH_TOAN, số tiền = tổng phiên.
+- Ghi nhật ký THANH_TOAN.
+- Hóa đơn PDF được tạo từ dữ liệu phiên, dịch vụ, thuê; lưu trong
+  files/invoices; chia sẻ qua FileProvider.
+
+5.6. Luồng thuê thiết bị
+-------------------------
+Tạo phiếu:
+- Kiểm tra danh sách thiết bị không rỗng.
+- Mỗi thiết bị phải là dịch vụ loại THUE, số lượng > 0, đủ tồn.
+- Tiền cọc = tổng (tiền cọc đơn vị * số lượng).
+- Tiền thuê = tổng (giá thuê * số lượng).
+- Tạo phieu_thue trạng thái DANG_THUE.
+- Tạo chi_tiet_thue cho từng thiết bị, lưu đơn giá, đơn vị, phí quá hạn.
+- Trừ tồn kho.
+- Nếu có cọc, ghi thanh_toan loại COC.
+- Nếu gắn phiên, cập nhật tiền thuê của phiên.
+
+Trả thiết bị:
+- Lấy phiếu và chi tiết.
+- Với từng chi tiết, tính số còn lại = số lượng - đã trả.
+- Nếu trả toàn bộ: trả hết phần còn lại.
+- Nếu trả một phần: chỉ trả số lượng được chọn.
+- Cộng lại tồn kho theo số đã trả.
+- Cập nhật số lượng đã trả.
+- Nếu tất cả chi tiết đã trả đủ: fullyReturned = true.
+- Tiền hoàn cọc = max(0, cọc - phí quá hạn - bồi thường) nếu trả đủ; nếu chưa
+  trả đủ thì hoàn cọc = 0.
+- Ghi ngày trả, phí quá hạn, bồi thường, hoàn cọc, trạng thái DA_TRA hoặc
+  giữ DANG_THUE nếu còn thiết bị.
+- Ghi thanh_toan HOAN_COC nếu có hoàn; ghi DIEU_CHINH cho phần cọc giữ lại.
+- Ghi nhật ký TRA_THIET_BI.
+- Nếu trả đủ và có phiên, cập nhật lại tiền thuê của phiên.
+
+Công thức phí quá hạn (RentalCalculator):
+  lateMinutes = số phút từ hẹn trả đến lúc trả (nếu trả muộn).
+  lateFee = round_to_thousand(ceil(lateMinutes / 60.0 * phí_quá_hạn_giờ)).
+  refund = max(0, cọc - lateFee - bồi_thường).
+
+5.7. Luồng lớp học
+-------------------
+- Tạo lớp: tên, HLV, sân, trình độ, ngày bắt đầu/kết thúc, sức chứa, học phí,
+  trạng thái.
+- Cấu hình lịch lớp: danh sách (thứ, giờ bắt đầu, giờ kết thúc).
+  saveClassSchedules xóa lịch cũ và chèn lại toàn bộ trong transaction.
+- Đăng ký: kiểm tra lớp còn mở, còn sức chứa, tìm/tạo khách, kiểm tra trùng.
+  - Nếu đã có đăng ký DANG_KY: trả ERROR_INVALID.
+  - Nếu đã có nhưng DA_HUY: cập nhật lại thành DANG_KY.
+  - Học phí = học phí lớp; giảm = min(giảm, học phí); đã thanh toán = 0.
+- Hủy: chuyển trạng thái DA_HUY.
+- Thanh toán: cập nhật da_thanh_toan = 1.
+- Lịch lớp tham gia kiểm tra trùng khi đặt lịch/phiên.
+
+5.8. Luồng sự kiện
+-------------------
+- Tạo sự kiện: tên, loại, mô tả, thời gian, hạn đăng ký, lệ phí, sức chứa,
+  lặp hàng năm, trạng thái.
+- Chọn sân: lưu vào su_kien_san.
+- Cấu hình lịch: lưu vào lich_su_kien (ngày, giờ, sân, nội dung).
+- Đăng ký: kiểm tra sự kiện còn mở, sức chứa, khách, trùng đăng ký.
+  - Lệ phí = lệ phí sự kiện; giảm = min(giảm, lệ phí).
+- Hủy/thanh toán tương tự lớp.
+- Nhân bản sang năm sau: cộng 1 năm vào các ngày, giữ sân/lịch, trạng thái
+  SAP_DIEN_RA, đánh dấu lặp hàng năm.
+- Lịch sự kiện tham gia kiểm tra trùng khi đặt lịch/phiên.
+
+5.9. Luồng khuyến mãi
+----------------------
+Nguồn khuyến mãi:
+- Khuyến mãi tự động theo ngày đặc biệt: getAutomaticPromotions(date, courtId).
+- Khuyến mãi nhập mã: findPromotionByCode(code).
+
+Cách tính giảm:
+- Nếu loại PHAN_TRAM:
+  giảm = amount * giá_trị / 100.
+  Nếu giảm_tối_đa > 0: giảm = min(giảm, giảm_tối_đa).
+- Nếu loại SO_TIEN: giảm = giá_trị.
+- Luôn giới hạn: 0 <= giảm <= amount.
+- Chỉ áp dụng nếu amount >= giá_trị_đơn_tối_thiểu.
+
+Phạm vi:
+- SAN: áp dụng trên tiền sân.
+- DICH_VU: áp dụng trên tiền dịch vụ.
+- TAT_CA: áp dụng trên tổng tiền sân + dịch vụ.
+- LOP_HOC/SU_KIEN: áp dụng cho học phí/lệ phí.
+
+Chọn khuyến mãi tốt nhất:
+- PromotionEngine.bestForSession duyệt các khuyến mãi tự động và mã nhập,
+  chọn kết quả có tổng giảm lớn nhất.
+- Khi áp dụng cho phiên, DatabaseHelper.applySessionDiscount lưu mã ưu đãi,
+  mã code, giảm sân, giảm dịch vụ, tổng giảm vào phien_choi.
+
+Điều kiện hiệu lực:
+- Trạng thái HOAT_DONG.
+- Ngày hiện tại nằm trong khoảng từ ngày/đến ngày (nếu có).
+- Với khuyến mãi theo ngày đặc biệt: đúng tháng/ngày, đúng năm nếu không lặp,
+  đúng sân nếu có giới hạn sân.
+
+5.10. Luồng thống kê
+---------------------
+RevenueSummary gồm:
+- court: tổng (tiền sân - giảm sân) của phiên đã kết thúc và đã thanh toán.
+- service: tổng (tiền dịch vụ - giảm dịch vụ) của phiên đã kết thúc và đã thanh toán.
+- rental: tổng (tiền thuê + phí quá hạn + bồi thường) của phiếu đã trả.
+- classFee: tổng (học phí - giảm) của đăng ký lớp DANG_KY và đã thanh toán.
+- eventFee: tổng (lệ phí - giảm) của đăng ký sự kiện DANG_KY và đã thanh toán.
+- discount: tổng tiền giảm của phiên đã thanh toán.
+- total: court + service + rental + classFee + eventFee.
+- receivable: công nợ.
+- depositsHeld: tiền cọc đang giữ.
+
+Công nợ (getReceivable):
+- Phiên đã kết thúc nhưng CHUA_THANH_TOAN.
+- Đăng ký lớp DANG_KY chưa thanh toán.
+- Đăng ký sự kiện DANG_KY chưa thanh toán.
+
+Tiền cọc đang giữ (getDepositsHeld):
+- Tổng COC - HOAN_COC - DIEU_CHINH trong thanh_toan.
+- Không âm (max 0).
+
+Các thống kê khác:
+- revenueByDay: doanh thu theo ngày từ phiên đã kết thúc, lớp/sự kiện đã thanh toán,
+  phiếu thuê.
+- topCourts: xếp hạng sân theo doanh thu phiên đã kết thúc.
+- getTopCustomers: xếp hạng khách theo doanh thu phiên đã kết thúc.
+- getPeakHours: nhóm phiên đã kết thúc theo giờ bắt đầu.
+- sumRevenue: tổng tiền lịch đặt DA_DAT trong khoảng ngày (dùng cho một số
+  chỉ số lịch, không phải doanh thu thực thu).
+- sumBookedMinutes: tổng phút đã đặt của lịch DA_DAT.
+- sumSessionRevenue: tổng tổng thanh toán của phiên đã kết thúc và đã thanh toán.
+- sumSessionMinutes: tổng phút chơi thực tế của phiên đã kết thúc.
+
+5.11. Luồng điều khiển đèn
+---------------------------
+Cấu hình:
+- Mỗi sân có tối đa một cấu hình đèn (khóa theo ma_san).
+- Lưu bằng insertWithOnConflict CONFLICT_REPLACE.
+- Trạng thái đèn: DANG_BAT, DANG_TAT, KHONG_RO, LOI; lỗi cuối lưu vào loi_cuoi.
+
+Điều khiển thủ công:
+- LightController.turnOn/turnOff chạy trên executor nền.
+- Đọc cấu hình từ DB, kiểm tra isConfigured.
+- Gửi HTTP, cập nhật trạng thái, gọi callback trên main thread.
+
+Tự động tắt:
+- LightScheduler.scheduleForBooking(booking):
+  + Chỉ lập lịch nếu sân có autoOff, cấu hình hợp lệ, lịch đang DA_DAT.
+  + Thời điểm kích hoạt = ngày + giờ kết thúc + phút trễ.
+  + Nếu thời điểm đã qua, không lập lịch.
+  + Dùng AlarmManager; Android 12+ nếu không có quyền báo thức chính xác
+    thì dùng setAndAllowWhileIdle.
+  + PendingIntent có requestCode = courtId, nên mỗi sân chỉ giữ một alarm;
+    lập lịch mới sẽ thay thế.
+- refreshCourt(courtId): hủy alarm cũ, lập lịch cho các lịch đặt trong 8 ngày tới.
+- rescheduleAll(): lập lịch lại toàn bộ sân trong 8 ngày tới.
+- sweepOverdue(): quét lịch hôm nay; nếu đã qua giờ tắt và sân không có phiên
+  đang chơi (hoặc phiên không phải của lịch đó) thì tắt đèn ngay.
+- markHandled/isHandled: dùng SharedPreferences để tránh tắt lặp cho cùng
+  lịch/giờ kết thúc.
+
+5.12. Luồng sao lưu/khôi phục
+------------------------------
+Sao lưu:
+1) Người dùng chọn đích qua Storage Access Framework.
+2) DatabaseHelper.backupDatabase(temp) tạo bản sao nhất quán.
+3) Copy tệp tạm ra URI đích.
+4) Lưu thời điểm sao lưu vào SharedPreferences.
+
+Khôi phục:
+1) Copy tệp nguồn vào cache.
+2) Kiểm tra: tồn tại, không rỗng, phiên bản CSDL trong khoảng 1..DB_VERSION,
+   có bảng bắt buộc, PRAGMA quick_check = ok.
+3) Sao lưu dữ liệu hiện tại (safety).
+4) Thay thế tệp CSDL, xóa -wal/-shm/-journal.
+5) Kiểm tra lại; nếu hỏng thì khôi phục safety.
+6) Mở lại CSDL.
+
+5.13. Luồng nhật ký
+--------------------
+- Các thao tác quan trọng gọi logActivity(action, target, targetId,
+  oldValue, newValue, result).
+- Ghi vào nhat_ky_hoat_dong với thời gian hiện tại, người thực hiện "Nguoi van hanh".
+- Lỗi ghi nhật ký bị bỏ qua để không ảnh hưởng nghiệp vụ chính.
+- AuditLogActivity hiển thị nhật ký mới nhất.
+
+
+================================================================================
+PHẦN 6 - GIẢI THÍCH CÁC LỚP MÃ NGUỒN QUAN TRỌNG
+================================================================================
+
+6.1. DatabaseHelper
+--------------------
+Vai trò: lớp duy nhất truy cập SQLite, chứa cả schema và nghiệp vụ dữ liệu.
+Các nhóm phương thức chính:
+- Khởi tạo/nâng cấp: onCreate, onUpgrade, createBaseTables,
+  createVersion2Tables, createVersion4Tables, createVersion5Tables,
+  createVersion6Tables, seed dữ liệu.
+- Sân: getCourts, getCourt, insertCourt, updateCourt, deleteCourt.
+- Khách: getCustomers, findCustomerByPhone, findOrCreateCustomer,
+  insertCustomer, updateCustomer, archiveCustomer.
+- Đặt lịch: searchBookings, getBooking, insertBooking, updateBooking,
+  cancelBooking, deleteBooking, isOverlap, activeSessionOverlaps,
+  isBookingAt, hasClassAt, hasEventAt, hasClassRange, hasEventRange.
+- Phiên: startWalkInSession, startBookingSession, getActiveSession, getSession,
+  getSessionsByDate, previewSessionTotal, finishSession, markSessionPaid,
+  applySessionDiscount, cancelSession.
+- Dịch vụ: getServices, insertService, updateService, deleteService,
+  addServiceOrder, getServiceOrders, changeStock, recalculateSessionService.
+- Vãng lai: getWalkInSlots, insertWalkInSlot, updateWalkInSlot,
+  deleteWalkInSlot, findWalkInSlot.
+- Thuê: createRental, getRental, getRentals, getRentalItems,
+  refreshOverdueRentals, returnRental, returnRentalItem,
+  updateSessionRentalFee.
+- HLV/lớp: getCoaches, insertCoach, updateCoach, deleteCoach,
+  getClasses, getClassRoom, insertClassRoom, updateClassRoom,
+  deleteClassRoom, getClassSchedules, saveClassSchedules,
+  getClassEnrollments, registerForClass, cancelClassEnrollment,
+  markClassEnrollmentPaid.
+- Sự kiện: getEvents, getEvent, insertEvent, updateEvent, deleteEvent,
+  getEventCourts, saveEventCourts, getEventSchedules, saveEventSchedules,
+  getEventRegistrations, registerForEvent, cancelEventRegistration,
+  markEventRegistrationPaid, duplicateEventToNextYear.
+- Ngày đặc biệt/khuyến mãi: getSpecialDates, insertSpecialDate,
+  updateSpecialDate, deleteSpecialDate, getPromotions, getActivePromotions,
+  getPromotion, findPromotionByCode, insertPromotion, updatePromotion,
+  deletePromotion, getPromotionSpecialDateIds, savePromotionSpecialDates,
+  getAutomaticPromotions.
+- Đèn: getLightConfig, getLightConfigs, saveLightConfig, updateLightStatus.
+- Thống kê: sumRevenue, countByStatus, sumBookedMinutes, topCourts,
+  revenueByDay, getTopCustomers, getPeakHours, getRevenueSummary,
+  getReceivable, getDepositsHeld, sumSessionRevenue, sumSessionMinutes.
+- Thanh toán/nhật ký: recordPayment, getPaymentsFor, getRecentPayments,
+  logActivity, getRecentActivities.
+- Backup: backupDatabase, readDatabaseVersion, hasRequiredTables,
+  getSchemaVersion.
+
+Điểm cần nhấn khi vấn đáp:
+- Tất cả thao tác ghi phức tạp dùng transaction.
+- Mã lỗi âm giúp Activity hiển thị thông báo chính xác.
+- Truy vấn dùng tham số ? để tránh SQL injection.
+- Cursor đóng tự động.
+- Tìm khách theo số điện thoại giúp tránh trùng khách.
+
+6.2. DateTimeUtils
+-------------------
+- Định dạng ngày/giờ tập trung, tránh mỗi màn hình tự format.
+- minutes(): đổi HH:mm thành số phút.
+- durationMinutes(): khoảng phút, không âm.
+- estimateTotal(): tính tiền lịch đặt, làm tròn nghìn.
+- estimateSessionFee(): tính tiền phiên vãng lai theo ngày giờ.
+- minutesBetweenDbDateTime(): khoảng phút giữa hai mốc yyyy-MM-dd HH:mm.
+- weekday(): trả 1..7 (thứ 2..chủ nhật).
+- autoOffTriggerMillis(): mốc alarm = giờ kết thúc + phút trễ.
+- shiftYears(): cộng năm cho ngày, dùng nhân bản sự kiện.
+- Các hàm chuyển đổi UTC dùng cho lịch tháng.
+
+6.3. MoneyUtils
+----------------
+- format(long): định dạng tiền theo vi-VN, kèm "đ".
+- formatShort(long): rút gọn "k"/"tr" cho biểu đồ/nhãn nhỏ.
+- parseOrDefault(): parse số an toàn, có giá trị mặc định.
+
+6.4. RentalCalculator
+----------------------
+- calculateDeposit: tổng cọc.
+- calculateRentFee: tổng tiền thuê.
+- lateMinutes: số phút trả muộn.
+- lateFee: phí quá hạn làm tròn nghìn.
+- refund: hoàn cọc, không âm.
+- totalReturn: tiện tính nhanh khi trả.
+
+6.5. PromotionEngine
+---------------------
+- apply/applyForScope: kiểm tra hiệu lực, phạm vi, đơn tối thiểu, tính giảm.
+- bestForSession/bestForScope: chọn mức giảm tốt nhất.
+- discountForAmount: tính giảm cho một số tiền.
+- isActiveOn: kiểm tra trạng thái và khoảng ngày.
+- isSpecialDateOn: kiểm tra ngày đặc biệt theo tháng/ngày/năm.
+- discount(): công thức phần trăm/số tiền, giới hạn giảm tối đa và không vượt base.
+
+6.6. QRCodeUtils
+-----------------
+- Dùng ZXing MultiFormatWriter để tạo BitMatrix QR.
+- Chuyển BitMatrix thành Bitmap ARGB_8888.
+- Trả null nếu nội dung rỗng hoặc lỗi.
+
+6.7. InvoiceGenerator
+----------------------
+- Tạo PDF khổ 595x842 (A4 xấp xỉ) bằng PdfDocument.
+- Nội dung: tên ứng dụng, tiêu đề hóa đơn, mã hóa đơn, thời gian, khách,
+  sân, giờ chơi, tiền sân, dịch vụ, thuê, tạm tính, giảm giá, tổng,
+  phương thức, trạng thái, mã giao dịch.
+- Lưu file trong files/invoices.
+- Chia sẻ/mở qua FileProvider.
+- Lưu ý: ensureSpace hiện chưa ngắt trang; hóa đơn rất dài có thể tràn trang.
+  Đây là hạn chế có thể nêu khi vấn đáp.
+
+6.8. BackupManager
+-------------------
+- SAO LƯU: dùng DatabaseHelper.backupDatabase để có bản sao nhất quán,
+  copy ra URI.
+- KIỂM TRA: phiên bản CSDL, bảng bắt buộc, PRAGMA quick_check.
+- KHÔI PHỤC: có bản safety, thay thế tệp, xóa side files, kiểm tra lại.
+- Lưu thời điểm sao lưu gần nhất vào SharedPreferences.
+
+6.9. LightScheduler và LightController
+---------------------------------------
+- LightScheduler: lập lịch alarm, hủy, làm mới, quét quá hạn, chống tắt lặp.
+- LightController: gửi HTTP, xây URL Home Assistant/ESP32, cập nhật trạng thái,
+  callback về main thread.
+- BootReceiver: lập lại lịch sau khi khởi động máy.
+- LightAutoOffReceiver: nhận alarm và gọi tắt đèn.
+
+6.10. Adapter và BarChartView
+------------------------------
+- BookingAdapter: hiển thị lịch đặt, bắt sự kiện click.
+- CourtAdapter: hiển thị sân, trạng thái, giá.
+- CustomerAdapter: hiển thị khách, gọi điện.
+- CalendarDayAdapter: hiển thị ngày trong lịch tháng, số lịch đặt.
+- BarChartView: vẽ biểu đồ cột doanh thu theo ngày.
+
+6.11. Unit test
+----------------
+- DateTimeUtilsTest: kiểm tra tính phút, thời lượng, weekday, format.
+- PhoneUtilsTest: kiểm tra chuẩn hóa/hợp lệ số điện thoại.
+- RentalCalculatorTest: kiểm tra cọc, tiền thuê, phí quá hạn, hoàn cọc.
+Chạy: gradlew test (Windows) hoặc ./gradlew test.
+
+
+================================================================================
+PHẦN 7 - CÀI ĐẶT, CHẠY VÀ KIỂM THỬ
+================================================================================
+
+7.1. Mở dự án
+--------------
+1) Mở Android Studio.
+2) Chọn Open, trỏ đến thư mục CourtMatePickleballCourtManager.
+3) Chờ Gradle Sync. Dự án dùng Kotlin DSL nên các tệp cấu hình là
+   build.gradle.kts, app/build.gradle.kts, settings.gradle.kts.
+4) Kiểm tra JDK 11 và Android SDK đã cài.
+
+7.2. Chạy ứng dụng
+------------------
+1) Tạo hoặc chọn emulator/thiết bị thật (Android 7.0+ do minSdk 24).
+2) Nhấn Run.
+3) Ứng dụng mở Dashboard.
+4) Nếu cần điều khiển đèn, cấu hình URL mạng LAN và cấp quyền báo thức.
+
+7.3. Chạy unit test
+--------------------
+- Windows: gradlew.bat test
+- Hoặc trong Android Studio: chuột phải app/src/test -> Run tests.
+- Kết quả mong đợi: các test DateTimeUtils, PhoneUtils, RentalCalculator pass.
+
+7.4. Đóng gói APK
+------------------
+- Build > Build Bundle(s)/APK(s) > Build APK(s).
+- APK nằm trong app/build/outputs/apk/debug/.
+- Bản release cần cấu hình signing.
+
+7.5. Lưu ý khi demo
+--------------------
+- Chuẩn bị dữ liệu mẫu: sân, khách, dịch vụ, khung vãng lai.
+- Nên demo theo thứ tự: đặt lịch -> bắt đầu phiên -> thêm dịch vụ -> thuê
+  thiết bị -> kết thúc -> thanh toán -> hóa đơn -> thống kê -> nhật ký.
+- Nếu demo đèn, chuẩn bị sẵn ESP32/Home Assistant hoặc dùng chế độ mô phỏng;
+  nếu không có thiết bị, trình bày phần cấu hình và giải thích luồng HTTP.
+
+
+================================================================================
+PHẦN 8 - BỘ CÂU HỎI VẤN ĐÁP
+================================================================================
+
+Nhóm A - Tổng quan
+-------------------
+A1. Ứng dụng làm gì?
+TL: Quản lý sân Pickleball: sân, khách, lịch đặt, phiên chơi, dịch vụ, thuê
+thiết bị, lớp, sự kiện, khuyến mãi, thanh toán, thống kê, đèn và sao lưu.
+
+A2. Đối tượng sử dụng là ai?
+TL: Chủ sân, nhân viên vận hành, lễ tân, quản lý.
+
+A3. Ứng dụng có dùng server không?
+TL: Không. Dữ liệu lưu cục bộ bằng SQLite; chỉ giao tiếp HTTP với thiết bị đèn.
+
+A4. Vì sao chọn Android/Java?
+TL: Phù hợp đồ án, dễ triển khai trên điện thoại/máy tính bảng, Java quen thuộc,
+SQLite có sẵn.
+
+A5. Phiên bản Android tối thiểu?
+TL: minSdk 24 (Android 7.0), targetSdk 34.
+
+A6. Ứng dụng có hỗ trợ nhiều người dùng không?
+TL: Hiện tại là ứng dụng cục bộ, chưa có đăng nhập/phân quyền; nhật ký ghi
+người thực hiện cố định "Nguoi van hanh".
+
+A7. Điểm nổi bật của ứng dụng?
+TL: Quản lý trọn vòng đời sân: đặt lịch, phiên chơi, dịch vụ, thuê, thanh toán,
+hóa đơn PDF, thống kê, điều khiển đèn và sao lưu.
+
+A8. Tác giả?
+TL: Nhóm số 2, 6 thành viên (Đào Đức Bình, Nguyễn Đức Kiên, Nguyễn Hồng Giang,
+Lê Thị Xuyến, Nguyễn Hữu Cảnh, Hoàng Hữu Nhật Anh).
+
+Nhóm B - Kiến trúc
+-------------------
+B1. Kiến trúc ứng dụng là gì?
+TL: Tách lớp Activity - Adapter/View - Model - DatabaseHelper - Util.
+
+B2. Vì sao dồn nghiệp vụ vào DatabaseHelper?
+TL: Đồ án nhỏ, giảm phân tán, đảm bảo mọi kiểm tra dữ liệu nằm một nơi,
+dễ transaction. Hạn chế: lớp lớn, có thể tách Repository/DAO khi mở rộng.
+
+B3. DatabaseHelper có phải singleton không?
+TL: Có, qua getInstance(context), tránh mở nhiều kết nối.
+
+B4. Transaction dùng ở đâu?
+TL: Đặt lịch, bắt đầu phiên, kết thúc, thanh toán, thêm dịch vụ, tạo/trả thuê,
+đăng ký lớp/sự kiện, lưu lịch, sao lưu.
+
+B5. Vì sao dùng mã lỗi âm?
+TL: Phân biệt lỗi nghiệp vụ (trùng lịch, hết kho...) mà không cần exception,
+dễ hiển thị thông báo.
+
+B6. Cursor được đóng thế nào?
+TL: Dùng try-with-resources.
+
+B7. Chống SQL injection ra sao?
+TL: Dùng tham số ? trong rawQuery/query, không nối chuỗi giá trị người dùng.
+
+B8. Dữ liệu ngày giờ lưu dạng nào?
+TL: Chuỗi yyyy-MM-dd, HH:mm, yyyy-MM-dd HH:mm; so sánh chuỗi được vì cùng định dạng.
+
+B9. Vì sao tiền lưu int?
+TL: Đơn vị đồng, tránh sai số số thực; làm tròn nghìn khi tính.
+
+B10. Ứng dụng có mô hình MVVM không?
+TL: Không. Đây là mô hình đơn giản Activity + Helper, phù hợp quy mô đồ án.
+
+Nhóm C - Cơ sở dữ liệu
+-----------------------
+C1. CSDL phiên bản mấy?
+TL: DB_VERSION = 6.
+
+C2. Có bao nhiêu bảng?
+TL: Khoảng 20 bảng nghiệp vụ, chia nhóm sân/khách, lịch/phiên, dịch vụ/thuê,
+lớp, sự kiện, khuyến mãi, thanh toán/nhật ký/đèn.
+
+C3. Bảng trung tâm là gì?
+TL: phien_choi - liên kết sân, khách, lịch đặt, dịch vụ, thuê, thanh toán.
+
+C4. Quan hệ sân - lịch đặt?
+TL: Một sân có nhiều lịch đặt; dat_lich.ma_san tham chiếu san.ma_san.
+
+C5. Quan hệ phiên - dịch vụ?
+TL: Một phiên có nhiều đơn dịch vụ; don_dich_vu.ma_phien tham chiếu phien_choi.
+
+C6. Quan hệ phiếu thuê - chi tiết?
+TL: Một phiếu thuê có nhiều chi tiết; chi_tiet_thue.ma_phieu tham chiếu phieu_thue.
+
+C7. Làm sao tránh trùng khách?
+TL: Tìm theo số điện thoại đã chuẩn hóa; nếu có thì dùng lại, cập nhật tên.
+
+C8. Xóa dịch vụ đang dùng thì sao?
+TL: Bị chặn, trả ERROR_REFERENCED.
+
+C9. Nâng cấp CSDL có mất dữ liệu không?
+TL: Không, migration additive, chỉ thêm bảng/cột.
+
+C10. Có chỉ mục (index) không?
+TL: Khóa chính tự tạo index; các truy vấn chính dựa trên khóa chính và cột
+thường dùng. Có thể bổ sung index cho ngày/sân/trạng thái khi dữ liệu lớn.
+
+C11. Tại sao có bảng uu_dai_dip?
+TL: Liên kết nhiều-nhiều giữa khuyến mãi và ngày đặc biệt.
+
+C12. Tại sao có bảng su_kien_san và lich_su_kien?
+TL: su_kien_san lưu sân sử dụng; lich_su_kien lưu lịch chi tiết theo ngày/giờ.
+
+C13. Dữ liệu mẫu có ảnh hưởng báo cáo không?
+TL: Có, nếu demo nhầm. Cần xóa/ẩn hoặc ghi rõ khi báo cáo.
+
+C14. Có kiểm tra khóa ngoại bằng FOREIGN KEY không?
+TL: Một số ràng buộc được kiểm tra ở tầng nghiệp vụ; không phụ thuộc hoàn toàn
+vào FOREIGN KEY của SQLite.
+
+Nhóm D - Đặt lịch
+------------------
+D1. Một lịch đặt gồm gì?
+TL: Sân, khách, ngày, giờ bắt đầu, giờ kết thúc, tổng tiền, trạng thái, ghi chú.
+
+D2. Trạng thái lịch đặt?
+TL: DA_DAT và DA_HUY.
+
+D3. Làm sao phát hiện trùng lịch?
+TL: Truy vấn chồng lấn: start_mới < end_cũ và end_mới > start_cũ, cùng sân/ngày,
+trạng thái DA_DAT, loại trừ chính id đang sửa.
+
+D4. Vì sao dùng điều kiện < và > thay vì <= >=?
+TL: Khoảng thời gian nửa mở; lịch kề nhau (10:00-11:00 và 11:00-12:00)
+không bị coi là trùng.
+
+D5. Có chặn đặt lịch khi sân đang có phiên chơi không?
+TL: Có, activeSessionOverlaps; đặc biệt phiên vãng lai chưa kết thúc bị coi
+như bận trong 2 giờ tới.
+
+D6. Vì sao 2 giờ?
+TL: Giả định an toàn cho phiên vãng lai chưa có giờ kết thúc, tránh đặt sát giờ;
+đây là quy ước nghiệp vụ có thể điều chỉnh.
+
+D7. Có chặn trùng lớp/sự kiện không?
+TL: Có, hasClassRange/hasEventRange, trả ERROR_COURT_BUSY.
+
+D8. Tổng tiền đặt lịch tính thế nào?
+TL: Số giờ * giá/giờ, làm tròn đến nghìn.
+
+D9. Đặt 90 phút tính sao?
+TL: 1.5 * giá/giờ, làm tròn nghìn.
+
+D10. Có đặt được lịch trong quá khứ không?
+TL: Form kiểm tra và chặn ngày/giờ không hợp lệ; tầng DB cũng kiểm tra trạng thái
+sân và trùng lịch.
+
+D11. Hủy lịch khác xóa lịch thế nào?
+TL: Hủy đổi trạng thái DA_HUY và ghi nhật ký; xóa là xóa hẳn bản ghi và ghi nhật ký.
+
+D12. Khách nhập tên mới nhưng số điện thoại đã có?
+TL: Dùng khách cũ, cập nhật lại tên, đặt trạng thái HOAT_DONG.
+
+D13. Số điện thoại được kiểm tra thế nào?
+TL: Chuẩn hóa bằng PhoneUtils, kiểm tra hợp lệ trước khi tạo khách.
+
+D14. Nếu sân bảo trì?
+TL: insertBooking trả ERROR_COURT_UNAVAILABLE.
+
+Nhóm E - Phiên chơi
+--------------------
+E1. Có mấy loại phiên?
+TL: DAT_TRUOC và VANG_LAI.
+
+E2. Trạng thái phiên?
+TL: DANG_CHOI và DA_KET_THUC.
+
+E3. Trạng thái thanh toán?
+TL: CHUA_THANH_TOAN, DA_THANH_TOAN, THAT_BAI.
+
+E4. Một sân có thể có hai phiên đang chơi không?
+TL: Không, getActiveSession kiểm tra và trả ERROR_SESSION_OVERLAP.
+
+E5. Bắt đầu phiên từ lịch đặt làm gì?
+TL: Tạo phien_choi loại DAT_TRUOC, gắn lịch/khách, tiền sân = tổng lịch.
+
+E6. Bắt đầu phiên vãng lai cần gì?
+TL: Khung giờ vãng lai đang áp dụng, sân trống, không trùng lịch/lớp/sự kiện.
+
+E7. Nếu khách vãng lai không có thông tin?
+TL: Có thể để trống khách (customerId <= 0), phiên vẫn tạo với ma_kh null.
+
+E8. Kết thúc phiên tính tiền thế nào?
+TL: Tiền sân + dịch vụ + thuê - giảm sân - giảm dịch vụ, không âm.
+
+E9. Phiên đặt trước kết thúc sớm có giảm tiền không?
+TL: Không, tiền sân giữ theo lịch đặt.
+
+E10. Phiên vãng lai tính theo giờ thực tế thế nào?
+TL: Số phút thực tế / 60 * đơn giá giờ, làm tròn nghìn.
+
+E11. Phiên vãng lai qua 0h thì sao?
+TL: endDateTime có ngày hôm sau, minutesBetweenDbDateTime tính đúng qua ngày;
+phần chặn đặt lịch có xử lý thêm 2 giờ an toàn.
+
+E12. Hủy phiên khác kết thúc phiên thế nào?
+TL: cancelSession: phiên vãng lai bị xóa; phiên đặt trước chuyển DA_KET_THUC
+với giờ kết thúc hiện tại.
+
+E13. Có thể thêm dịch vụ sau khi kết thúc phiên không?
+TL: Không, addServiceOrder yêu cầu phiên DANG_CHOI.
+
+E14. Tạm tính lấy ở đâu?
+TL: previewSessionTotal tính lại theo endDateTime, nếu đã kết thúc thì trả tổng đã lưu.
+
+Nhóm F - Thanh toán và hóa đơn
+-------------------------------
+F1. Phương thức thanh toán?
+TL: Tiền mặt, QR nội bộ (và hằng số MOMO cho tương thích cột cũ).
+
+F2. QR nội bộ là gì?
+TL: Sinh QR từ nội dung thanh toán để khách quét; ứng dụng không kết nối
+cổng thanh toán thật.
+
+F3. Mã hóa đơn sinh thế nào?
+TL: HD + yyyyMMdd + "-" + mã phiên 5 chữ số.
+
+F4. Có thanh toán hai lần không?
+TL: Không, markSessionPaid kiểm tra trạng thái đã thanh toán và điều kiện
+trang_thai_tt <> DA_THANH_TOAN.
+
+F5. Thanh toán khi phiên chưa kết thúc?
+TL: Không, trả ERROR_INVALID.
+
+F6. Vì sao có hai cột phương thức thanh toán?
+TL: Cột cũ có CHECK chỉ nhận TIEN_MAT/MOMO; QR nội bộ lưu ở cột mới để
+không phá vỡ ràng buộc CSDL cũ.
+
+F7. Thanh toán ghi vào đâu?
+TL: Cập nhật phien_choi và chèn thanh_toan, ghi nhat_ky_hoat_dong.
+
+F8. Hóa đơn PDF lưu ở đâu?
+TL: files/invoices, chia sẻ qua FileProvider.
+
+F9. Hóa đơn có chia sẻ được không?
+TL: Có, dùng ACTION_SEND với MIME application/pdf.
+
+F10. Nếu máy không có ứng dụng đọc PDF?
+TL: InvoiceGenerator.open bắt lỗi và chuyển sang share.
+
+F11. Hóa đơn dài có bị tràn trang không?
+TL: ensureSpace hiện chưa ngắt trang, đây là hạn chế đã biết.
+
+F12. Có in trực tiếp không?
+TL: Hiện tại tạo PDF và mở/chia sẻ; in qua ứng dụng PDF của hệ thống.
+
+Nhóm G - Dịch vụ và thuê thiết bị
+-----------------------------------
+G1. Dịch vụ có mấy loại?
+TL: BAN và THUE.
+
+G2. Tồn kho thay đổi khi nào?
+TL: Bán: trừ khi thêm đơn dịch vụ. Thuê: trừ khi tạo phiếu, cộng khi trả.
+
+G3. Có bán quá tồn kho không?
+TL: Không, addServiceOrder kiểm tra stock < quantity.
+
+G4. Tiền cọc thuê tính thế nào?
+TL: Tổng (cọc đơn vị * số lượng).
+
+G5. Tiền thuê tính thế nào?
+TL: Tổng (giá thuê * số lượng).
+
+G6. Trả một phần có hoàn cọc không?
+TL: Không, chỉ hoàn khi đã trả đủ tất cả thiết bị.
+
+G7. Phí quá hạn tính thế nào?
+TL: ceil(số phút muộn / 60 * phí/giờ), làm tròn nghìn.
+
+G8. Hoàn cọc tính thế nào?
+TL: max(0, cọc - phí quá hạn - bồi thường).
+
+G9. Nếu phí quá hạn + bồi thường > cọc?
+TL: Hoàn cọc = 0; phần vượt không tự động tạo công nợ, cần thu thêm thủ công.
+
+G10. Có gắn thuê với phiên chơi không?
+TL: Có, nếu sessionId > 0 thì tiền thuê được cộng vào phiên.
+
+G11. Phiếu quá hạn được cập nhật thế nào?
+TL: refreshOverdueRentals chuyển DANG_THUE -> QUA_HAN khi hẹn trả < hiện tại.
+
+G12. Trả thiết bị hư hỏng thì sao?
+TL: Nhập tiền bồi thường, trừ vào cọc khi tính hoàn.
+
+G13. Có lưu tình trạng thiết bị không?
+TL: Có cột tinh_trang trong chi_tiet_thue (theo model/DB).
+
+G14. Xóa dịch vụ đã thuê thì sao?
+TL: Bị chặn do tham chiếu trong chi_tiet_thue.
+
+Nhóm H - Lớp học và HLV
+------------------------
+H1. Lớp học gồm gì?
+TL: Tên, HLV, sân, trình độ, thời gian, sức chứa, học phí, trạng thái.
+
+H2. Lịch lớp lưu thế nào?
+TL: Bảng lich_lop theo thứ và giờ; mỗi lớp có thể nhiều buổi/tuần.
+
+H3. Đăng ký lớp kiểm tra gì?
+TL: Lớp còn mở, còn chỗ, khách hợp lệ, không trùng đăng ký đang hoạt động.
+
+H4. Học phí lấy khi nào?
+TL: Lấy theo lớp tại thời điểm đăng ký và lưu vào dang_ky_lop.
+
+H5. Giảm giá lớp tính thế nào?
+TL: min(giảm, học phí), không âm.
+
+H6. Hủy đăng ký làm gì?
+TL: Chuyển trạng thái DA_HUY; có thể đăng ký lại.
+
+H7. Đánh dấu thanh toán?
+TL: Cập nhật da_thanh_toan = 1.
+
+H8. Lớp có chặn đặt sân không?
+TL: Có, lịch lớp đang mở/đang học tham gia kiểm tra trùng.
+
+H9. Xóa lớp đang có học viên?
+TL: Cần cân nhắc; hiện tại deleteClassRoom xóa lớp, nên kiểm tra dữ liệu liên quan
+trước khi xóa.
+
+H10. HLV nghỉ thì sao?
+TL: Trạng thái NGHI; lớp vẫn tham chiếu HLV, nên thay HLV nếu cần.
+
+Nhóm I - Sự kiện
+-----------------
+I1. Sự kiện gồm gì?
+TL: Tên, loại, mô tả, thời gian, hạn đăng ký, lệ phí, sức chứa, lặp năm, trạng thái.
+
+I2. Loại sự kiện?
+TL: GIAI_DAU và SU_KIEN.
+
+I3. Trạng thái sự kiện?
+TL: SAP_DIEN_RA, DANG_DANG_KY, DANG_DIEN_RA, KET_THUC, HUY.
+
+I4. Đăng ký sự kiện kiểm tra gì?
+TL: Sự kiện còn mở, sức chứa, khách, trùng đăng ký.
+
+I5. Sức chứa 0 nghĩa là gì?
+TL: Không giới hạn (điều kiện capacity > 0 mới kiểm tra).
+
+I6. Nhân bản sự kiện sang năm làm gì?
+TL: Cộng 1 năm ngày bắt đầu/kết thúc/hạn/lịch, giữ sân, trạng thái SAP_DIEN_RA.
+
+I7. Sự kiện có chặn đặt sân không?
+TL: Có, lịch sự kiện chưa kết thúc/hủy tham gia kiểm tra trùng.
+
+I8. Có thể chọn nhiều sân cho sự kiện?
+TL: Có, lưu trong su_kien_san.
+
+I9. Lịch sự kiện có nội dung gì?
+TL: Ngày, giờ, sân, nội dung hoạt động.
+
+I10. Hủy đăng ký sự kiện?
+TL: Chuyển DA_HUY; có thể đăng ký lại nếu còn chỗ.
+
+Nhóm J - Khuyến mãi và ngày đặc biệt
+-------------------------------------
+J1. Có mấy loại giảm?
+TL: PHAN_TRAM và SO_TIEN.
+
+J2. Phạm vi khuyến mãi?
+TL: SAN, DICH_VU, LOP_HOC, SU_KIEN, TAT_CA.
+
+J3. Giảm phần trăm có giới hạn không?
+TL: Có, giam_toi_da nếu > 0.
+
+J4. Điều kiện đơn tối thiểu?
+TL: amount phải >= gia_tri_don_toi_thieu.
+
+J5. Khuyến mãi tự động kích hoạt thế nào?
+TL: Gắn với ngày đặc biệt; đúng tháng/ngày (và năm nếu không lặp), đúng sân,
+trong khoảng hiệu lực.
+
+J6. Mã khuyến mãi nhập tay?
+TL: findPromotionByCode, so khớp mã sau khi trim và uppercase.
+
+J7. Chọn khuyến mãi nào khi có nhiều?
+TL: PromotionEngine chọn mức giảm lớn nhất.
+
+J8. Có cộng dồn nhiều khuyến mãi không?
+TL: Không, chọn một kết quả tốt nhất.
+
+J9. Giảm có thể vượt tiền hàng không?
+TL: Không, discount bị giới hạn bởi amount.
+
+J10. Ngày đặc biệt lặp hàng năm lưu thế nào?
+TL: nam = null, lap_lai_hang_nam = 1.
+
+J11. Ngày đặc biệt theo sân?
+TL: ma_san có thể null (tất cả sân) hoặc mã sân cụ thể.
+
+J12. Khuyến mãi hết hạn?
+TL: Không áp dụng nếu ngày hiện tại ngoài tu_ngay/den_ngay.
+
+Nhóm K - Thống kê
+------------------
+K1. Doanh thu tổng tính từ đâu?
+TL: RevenueSummary: sân + dịch vụ + thuê + lớp + sự kiện.
+
+K2. Doanh thu sân tính thế nào?
+TL: Tổng (tien_san - giam_san) của phiên đã kết thúc và đã thanh toán.
+
+K3. Vì sao chỉ tính đã thanh toán?
+TL: Phản ánh thực thu; khoản chưa thu nằm ở công nợ.
+
+K4. Công nợ gồm gì?
+TL: Phiên kết thúc chưa thanh toán + lớp/sự kiện đăng ký chưa thanh toán.
+
+K5. Tiền cọc đang giữ tính thế nào?
+TL: COC - HOAN_COC - DIEU_CHINH, không âm.
+
+K6. Top sân dựa trên gì?
+TL: Doanh thu và số lịch của phiên đã kết thúc.
+
+K7. Top khách dựa trên gì?
+TL: Doanh thu và số lịch của phiên đã kết thúc.
+
+K8. Giờ cao điểm xác định thế nào?
+TL: Nhóm phiên đã kết thúc theo giờ bắt đầu, đếm số lịch.
+
+K9. Doanh thu theo ngày gồm gì?
+TL: Phiên đã kết thúc, lớp/sự kiện đã thanh toán, phiếu thuê.
+
+K10. Có lọc theo khoảng ngày không?
+TL: Có, hầu hết hàm thống kê nhận fromDate, toDate.
+
+K11. Vì sao sumRevenue khác RevenueSummary?
+TL: sumRevenue tính tiền lịch đặt DA_DAT (giá trị đặt), không phải thực thu.
+
+K12. Có xuất báo cáo Excel không?
+TL: Hiện chưa; có thể bổ sung xuất CSV/Excel.
+
+Nhóm L - Đèn và tự động tắt
+-----------------------------
+L1. Hỗ trợ loại đèn nào?
+TL: ESP32 (URL bật/tắt) và Home Assistant.
+
+L2. Home Assistant gọi API nào?
+TL: POST {url gốc}/api/services/light/turn_on hoặc turn_off, body entity_id,
+header Bearer token.
+
+L3. ESP32 gọi thế nào?
+TL: Gọi URL bật/tắt với phương thức cấu hình (mặc định GET), có thể kèm token.
+
+L4. Tự động tắt dựa trên gì?
+TL: Lịch đặt DA_DAT, giờ kết thúc + phút trễ, cấu hình autoOff của sân.
+
+L5. Dùng cơ chế nào để hẹn giờ?
+TL: AlarmManager + PendingIntent + BroadcastReceiver.
+
+L6. Android 12+ cần quyền gì?
+TL: Quyền báo thức chính xác (SCHEDULE_EXACT_ALARM); nếu không có thì dùng
+setAndAllowWhileIdle.
+
+L7. Vì sao requestCode là courtId?
+TL: Mỗi sân chỉ giữ một alarm; lập lịch mới thay thế alarm cũ.
+
+L8. Chống tắt lặp thế nào?
+TL: SharedPreferences lưu handled_end_<bookingId>; so khớp endTime.
+
+L9. Nếu sân đang có phiên khác thì sao?
+TL: sweepOverdue bỏ qua, không tắt đèn.
+
+L10. Khởi động lại máy có mất lịch tắt không?
+TL: BootReceiver lập lại lịch.
+
+L11. Có điều khiển thủ công không?
+TL: Có, LightController.turnOn/turnOff và nút kiểm tra trong cấu hình.
+
+L12. Lỗi mạng được lưu không?
+TL: Có, trạng thái LOI và loi_cuoi.
+
+Nhóm M - Sao lưu, bảo mật, chất lượng
+---------------------------------------
+M1. Sao lưu những gì?
+TL: Toàn bộ CSDL courtmate.db.
+
+M2. Khôi phục có kiểm tra hợp lệ không?
+TL: Có: phiên bản, bảng bắt buộc, PRAGMA quick_check.
+
+M3. Khôi phục hỏng thì sao?
+TL: Có bản safety để khôi phục lại dữ liệu trước đó.
+
+M4. Có mã hóa CSDL không?
+TL: Chưa; dữ liệu cục bộ. Có thể dùng SQLCipher khi mở rộng.
+
+M5. Token đèn lưu thế nào?
+TL: Lưu trong bảng cấu hình đèn; chưa mã hóa. Cần bảo vệ thiết bị và cân nhắc
+mã hóa khi triển khai thật.
+
+M6. Có phân quyền không?
+TL: Chưa; phù hợp đồ án. Có thể thêm đăng nhập/phân quyền khi mở rộng.
+
+M7. Có kiểm thử tự động không?
+TL: Có unit test cho DateTimeUtils, PhoneUtils, RentalCalculator.
+
+M8. Có kiểm thử giao diện không?
+TL: Chưa có Espresso; kiểm thử thủ công theo TEST_CASES.md.
+
+M9. Vì sao dùng SharedPreferences?
+TL: Lưu cờ nhỏ: thời điểm backup, trạng thái đã xử lý auto-off.
+
+M10. Ứng dụng có xử lý xoay màn hình?
+TL: Activity mặc định; dữ liệu lưu DB nên không mất. Có thể bổ sung
+ViewModel nếu cần giữ trạng thái UI.
+
+M11. Có xử lý đa ngôn ngữ?
+TL: Chuỗi nằm trong strings.xml; hiện tiếng Việt là chính, có thể thêm values-en.
+
+M12. Có tối ưu cho dữ liệu lớn?
+TL: Chưa có phân trang; có thể thêm LIMIT/OFFSET hoặc Paging khi cần.
+
+Nhóm N - Tình huống và lỗi thường gặp
+--------------------------------------
+N1. Đặt lịch báo trùng dù sân trống?
+TL: Kiểm tra lịch DA_DAT cùng sân/ngày/giờ, phiên đang chơi, lớp/sự kiện.
+Có thể còn lịch khác chưa nhìn thấy do bộ lọc.
+
+N2. Không bắt đầu được phiên vãng lai?
+TL: Kiểm tra khung giờ vãng lai đúng thứ/giờ và trạng thái DANG_AP_DUNG;
+kiểm tra sân có phiên/lịch/lớp/sự kiện trùng.
+
+N3. Không thanh toán được?
+TL: Phiên phải DA_KET_THUC và chưa thanh toán.
+
+N4. Không thuê được thiết bị?
+TL: Dịch vụ phải loại THUE, đủ tồn, số lượng > 0.
+
+N5. Không đăng ký lớp được?
+TL: Lớp còn mở, còn chỗ, khách chưa đăng ký DANG_KY.
+
+N6. Không đăng ký sự kiện được?
+TL: Sự kiện còn mở, còn chỗ, chưa đăng ký DANG_KY.
+
+N7. Đèn không tắt tự động?
+TL: Kiểm tra autoOff, cấu hình hợp lệ, quyền báo thức, lịch DA_DAT,
+phút trễ, phiên đang chơi, trạng thái handled.
+
+N8. Không kết nối đèn?
+TL: Kiểm tra URL, token, entity_id, mạng LAN, timeout, phương thức HTTP.
+
+N9. Khôi phục báo tệp không hợp lệ?
+TL: Tệp không phải CSDL CourtMate, sai phiên bản, thiếu bảng hoặc quick_check lỗi.
+
+N10. Sao lưu đi đâu?
+TL: Người dùng chọn vị trí qua Storage Access Framework.
+
+N11. Xóa sân báo lỗi?
+TL: Sân đang được dữ liệu khác tham chiếu; cần xử lý dữ liệu liên quan.
+
+N12. Số điện thoại không hợp lệ?
+TL: PhoneUtils chuẩn hóa/kiểm tra; nhập đúng định dạng Việt Nam.
+
+Nhóm O - Câu hỏi mở rộng, phản biện
+------------------------------------
+O1. Nếu hai nhân viên thao tác cùng lúc?
+TL: SQLite trên một thiết bị khóa ghi; chưa hỗ trợ đa thiết bị. Cần backend
+nếu muốn đồng bộ nhiều máy.
+
+O2. Nếu mất điện thoại?
+TL: Dữ liệu cục bộ có thể mất nếu không sao lưu; khuyến nghị sao lưu định kỳ.
+
+O3. Làm sao đồng bộ nhiều chi nhánh?
+TL: Cần backend/API, CSDL trung tâm, đồng bộ và phân quyền; hiện chưa có.
+
+O4. Tại sao không dùng Room?
+TL: Đồ án dùng SQLiteOpenHelper để thể hiện kỹ năng SQL và kiểm soát migration;
+Room là hướng nâng cấp.
+
+O5. Tại sao không dùng Firebase?
+TL: Yêu cầu dữ liệu cục bộ, không phụ thuộc mạng/chi phí; có thể bổ sung sau.
+
+O6. Điểm yếu lớn nhất của mã nguồn?
+TL: DatabaseHelper quá lớn, chưa có repository, chưa phân trang, chưa mã hóa,
+hóa đơn PDF chưa ngắt trang.
+
+O7. Cách cải thiện DatabaseHelper?
+TL: Tách DAO/Repository theo miền, thêm interface, unit test với Robolectric.
+
+O8. Có thể thêm thanh toán thật không?
+TL: Có, tích hợp cổng thanh toán qua API, thêm trạng thái giao dịch và webhook.
+
+O9. Có thể thêm đặt lịch online cho khách không?
+TL: Có, cần backend, tài khoản khách, API đặt lịch và đồng bộ với app quản lý.
+
+O10. Có thể thêm thông báo đẩy không?
+TL: Có, dùng Firebase Cloud Messaging hoặc notification cục bộ.
+
+O11. Có thể xuất báo cáo PDF/Excel không?
+TL: Có, mở rộng từ InvoiceGenerator hoặc thêm thư viện CSV/Excel.
+
+O12. Làm sao đảm bảo tính đúng đắn của công thức tiền?
+TL: Tập trung ở DateTimeUtils/RentalCalculator/PromotionEngine, có unit test,
+làm tròn nghìn, dùng int.
+
+O13. Tại sao dùng nửa mở [start, end)?
+TL: Tránh coi hai lịch kề nhau là trùng, phù hợp cách đặt sân thực tế.
+
+O14. Tại sao lưu cả trạng thái thanh toán và sổ thanh toán?
+TL: Trạng thái trên phiên để truy vấn nhanh; sổ thanh toán để lưu lịch sử giao dịch.
+
+O15. Nếu sửa lịch đặt đã có phiên thì sao?
+TL: Cần kiểm tra nghiệp vụ; hiện tại updateBooking kiểm tra trùng nhưng không
+tự động đồng bộ phiên đã tạo. Nên tránh sửa lịch đã bắt đầu phiên.
+
+O16. Nếu xóa khách đang có lịch?
+TL: Cần chặn hoặc lưu trữ; hiện tại nên dùng chức năng lưu trữ thay vì xóa cứng.
+
+O17. Có kiểm tra giờ kết thúc lớn hơn giờ bắt đầu ở tầng DB không?
+TL: Form kiểm tra; tầng DB giả định dữ liệu hợp lệ. Có thể bổ sung kiểm tra
+trong insertBooking/updateBooking để chắc chắn.
+
+O18. Tại sao phiên vãng lai chưa kết thúc bị coi là bận 2 giờ?
+TL: Vì không biết khách chơi bao lâu; 2 giờ là giả định an toàn, tránh bán trùng sân.
+
+O19. Có thể cấu hình thời gian an toàn này không?
+TL: Hiện là hằng trong mã; có thể đưa vào cấu hình hệ thống.
+
+O20. Nếu dữ liệu ngày sai định dạng?
+TL: DateTimeUtils trả 0/null an toàn; nên kiểm tra đầu vào ở form.
+
+Nhóm P - Câu hỏi về demo và báo cáo
+------------------------------------
+P1. Demo nhanh nhất nên làm gì?
+TL: Tạo lịch -> bắt đầu phiên -> thêm dịch vụ -> thuê -> kết thúc -> thanh toán
+-> xem hóa đơn -> xem thống kê -> xem nhật ký.
+
+P2. Nên nhấn mạnh điểm gì?
+TL: Kiểm tra trùng lịch nhiều tầng, transaction, mã lỗi, công thức tiền,
+tự động tắt đèn, sao lưu an toàn.
+
+P3. Nếu được hỏi "phần nào em làm"?
+TL: Trả lời trung thực theo phân công nhóm; nêu rõ màn hình/lớp đã phụ trách
+và hiểu luồng chung.
+
+P4. Nếu không nhớ số dòng?
+TL: Nêu tên lớp/phương thức; không cần đọc thuộc số dòng.
+
+P5. Nếu bị hỏi "tại sao không dùng thư viện X"?
+TL: Nêu tiêu chí: đơn giản, đủ dùng, giảm phụ thuộc; thư viện X là hướng mở rộng.
+
+P6. Nếu bị hỏi "dữ liệu có an toàn không"?
+TL: Cục bộ, chưa mã hóa, có sao lưu/khôi phục; triển khai thật cần mã hóa,
+phân quyền, backup định kỳ.
+
+P7. Nếu bị hỏi "test gì rồi"?
+TL: Unit test cho thời gian, số điện thoại, tính tiền thuê; kiểm thử thủ công
+theo TEST_CASES.md.
+
+P8. Nếu bị hỏi "khó khăn lớn nhất"?
+TL: Đồng bộ logic trùng lịch/phiên/lớp/sự kiện; xử lý migration; thanh toán
+tương thích cột cũ; auto-off qua alarm.
+
+P9. Nếu bị hỏi "hướng phát triển"?
+TL: Backend đồng bộ, đăng nhập/phân quyền, thanh toán thật, thông báo đẩy,
+báo cáo Excel, Room, mã hóa CSDL, phân trang.
+
+P10. Nếu bị hỏi "tại sao DB_VERSION 6 mà README ghi 5"?
+TL: README cũ; mã nguồn hiện tại là 6, đã bổ sung migration và tính năng mới.
+
+
+================================================================================
+PHẦN 9 - KỊCH BẢN DEMO
+================================================================================
+
+Kịch bản 10-15 phút:
+1) Mở Dashboard, giới thiệu tổng quan.
+2) Vào Sân, thêm/sửa một sân, nêu trạng thái HOAT_DONG/BAO_TRI.
+3) Vào Khách hàng, thêm khách, nêu chuẩn hóa số điện thoại.
+4) Vào Đặt lịch, tạo lịch 60 phút, chỉ ra tổng tiền tự tính.
+5) Thử tạo lịch trùng để thấy thông báo lỗi.
+6) Vào Phiên chơi, bắt đầu phiên từ lịch.
+7) Mở chi tiết phiên, thêm dịch vụ, thuê thiết bị, áp khuyến mãi.
+8) Kết thúc phiên, kiểm tra tạm tính/tổng tiền.
+9) Thanh toán tiền mặt hoặc QR, xem hóa đơn PDF.
+10) Vào Dịch vụ, kiểm tra tồn kho giảm.
+11) Vào Thuê thiết bị, trả thiết bị, xem hoàn cọc.
+12) Vào Thống kê, xem doanh thu, công nợ, top sân/khách.
+13) Vào Nhật ký, xem các thao tác vừa thực hiện.
+14) Vào Cấu hình đèn, giới thiệu ESP32/Home Assistant và auto-off.
+15) Vào Cài đặt, sao lưu CSDL (nếu có thời gian).
+
+Mẹo trình bày:
+- Nói rõ dữ liệu mẫu trước khi thao tác.
+- Không thao tác quá nhanh; chỉ vào màn hình và giải thích luồng.
+- Nếu lỗi mạng/đèn, chuyển sang giải thích mã nguồn thay vì cố demo thiết bị.
+
+
+================================================================================
+PHẦN 10 - HẠN CHẾ VÀ HƯỚNG PHÁT TRIỂN
+================================================================================
+
+10.1. Hạn chế hiện tại
+-----------------------
+- Chưa có backend, không đồng bộ nhiều thiết bị/chi nhánh.
+- Chưa có đăng nhập, phân quyền, người dùng thật.
+- CSDL chưa mã hóa; token đèn lưu dạng thô.
+- DatabaseHelper lớn, khó bảo trì khi mở rộng.
+- Chưa phân trang danh sách lớn.
+- Hóa đơn PDF chưa tự động ngắt trang.
+- Chưa có thông báo đẩy/nhắc lịch.
+- Chưa có xuất Excel/CSV.
+- Chưa có kiểm thử giao diện tự động.
+- Phiên vãng lai chưa kết thúc bị coi là bận cố định 2 giờ.
+- Chưa tự động tạo công nợ khi phí quá hạn/bồi thường vượt cọc.
+
+10.2. Hướng phát triển
+-----------------------
+- Tách Repository/DAO, áp dụng Room hoặc kiến trúc MVVM.
+- Thêm backend/API, đồng bộ đa thiết bị, đặt lịch online.
+- Thêm đăng nhập, phân quyền theo vai trò.
+- Mã hóa CSDL, bảo vệ token, audit log đầy đủ hơn.
+- Tích hợp cổng thanh toán thật, webhook, đối soát.
+- Thông báo đẩy, nhắc lịch, nhắc trả thiết bị.
+- Xuất báo cáo Excel/PDF nâng cao.
+- Tối ưu hiệu năng, phân trang, index.
+- Bổ sung Espresso/Robolectric test.
+- Cấu hình thời gian an toàn vãng lai linh hoạt.
+
+
+================================================================================
+PHỤ LỤC A - MÃ LỖI NGHIỆP VỤ
+================================================================================
+
+-1   ERROR                : Lỗi chung.
+-2   ERROR_OVERLAP        : Trùng lịch đặt.
+-3   ERROR_COURT_UNAVAILABLE : Sân không tồn tại/không hoạt động.
+-4   ERROR_SESSION_OVERLAP: Trùng phiên đang chơi.
+-5   ERROR_OUTSIDE_WALKIN : Ngoài khung giờ vãng lai.
+-6   ERROR_COURT_BUSY     : Sân bận do lớp/sự kiện/phiên.
+-7   ERROR_STOCK          : Không đủ tồn kho.
+-8   ERROR_CAPACITY       : Vượt sức chứa.
+-9   ERROR_INVALID        : Dữ liệu/trạng thái không hợp lệ.
+-10  ERROR_REFERENCED     : Đang được tham chiếu, không thể xóa.
+
+Cách dùng trong Activity:
+- Kiểm tra kết quả trả về.
+- Nếu < 0, ánh xạ mã lỗi sang thông báo thân thiện.
+- Không hiển thị mã âm trực tiếp cho người dùng cuối.
+
+
+================================================================================
+PHỤ LỤC B - BẢNG TRẠNG THÁI
+================================================================================
+
+Sân:
+- HOAT_DONG : đang hoạt động.
+- BAO_TRI   : bảo trì.
+
+Lịch đặt:
+- DA_DAT : đã đặt.
+- DA_HUY : đã hủy.
+
+Phiên chơi:
+- DANG_CHOI    : đang chơi.
+- DA_KET_THUC  : đã kết thúc.
+Thanh toán phiên:
+- CHUA_THANH_TOAN : chưa thanh toán.
+- DA_THANH_TOAN   : đã thanh toán.
+- THAT_BAI        : thất bại.
+
+Phương thức:
+- TIEN_MAT  : tiền mặt.
+- QR_NOI_BO : QR nội bộ.
+- MOMO      : dự phòng/tương thích.
+
+Dịch vụ:
+- BAN     : bán.
+- THUE    : cho thuê.
+- DANG_BAN: đang bán.
+- NGUNG   : ngừng.
+
+Thuê thiết bị:
+- DANG_THUE : đang thuê.
+- QUA_HAN   : quá hạn.
+- DA_TRA    : đã trả.
+
+Lớp học:
+- MO_DANG_KY : mở đăng ký.
+- DANG_HOC   : đang học.
+- KET_THUC   : kết thúc.
+- HUY        : hủy.
+
+Đăng ký lớp:
+- DANG_KY : đang đăng ký.
+- DA_HUY  : đã hủy.
+
+Sự kiện:
+- SAP_DIEN_RA   : sắp diễn ra.
+- DANG_DANG_KY  : đang đăng ký.
+- DANG_DIEN_RA  : đang diễn ra.
+- KET_THUC      : kết thúc.
+- HUY           : hủy.
+
+Đăng ký sự kiện:
+- DANG_KY : đang đăng ký.
+- DA_HUY  : đã hủy.
+
+Khuyến mãi:
+- HOAT_DONG : hoạt động.
+- TAM_NGUNG : tạm ngừng.
+Loại:
+- PHAN_TRAM : phần trăm.
+- SO_TIEN   : số tiền.
+Phạm vi:
+- SAN, DICH_VU, LOP_HOC, SU_KIEN, TAT_CA.
+
+Ngày đặc biệt:
+- HOAT_DONG : hoạt động.
+- TAM_NGUNG : tạm ngừng.
+Loại:
+- NGAY_LE        : ngày lễ.
+- KY_NIEM_SAN    : kỷ niệm sân.
+
+Đèn:
+- DANG_BAT  : đang bật.
+- DANG_TAT  : đang tắt.
+- KHONG_RO  : không rõ.
+- LOI       : lỗi.
+Loại:
+- ESP32           : điều khiển qua URL.
+- HOME_ASSISTANT  : điều khiển qua API Home Assistant.
+
+Thanh toán:
+- Đối tượng: DAT_LICH, PHIEN, THUE, LOP, SU_KIEN, GOI.
+- Giao dịch: COC, THANH_TOAN, HOAN_COC, DIEU_CHINH.
+
+Giờ vãng lai:
+- DANG_AP_DUNG : đang áp dụng.
+- TAM_NGUNG    : tạm ngưng.
+
+
+================================================================================
+PHỤ LỤC C - CHECKLIST TRƯỚC KHI VẤN ĐÁP
+================================================================================
+
+Kiến thức cần nắm:
+[ ] Tên ứng dụng, package, công nghệ, minSdk/targetSdk.
+[ ] Kiến trúc Activity - Adapter/Model - DatabaseHelper - Util.
+[ ] DatabaseHelper singleton, transaction, mã lỗi.
+[ ] DB_VERSION = 6, các nhóm bảng chính.
+[ ] Luồng đặt lịch và 4 tầng kiểm tra trùng.
+[ ] Công thức tiền đặt lịch, tiền phiên, tiền thuê, hoàn cọc.
+[ ] Luồng thanh toán, mã hóa đơn, hai cột phương thức.
+[ ] Luồng thuê/trả, tồn kho, cọc.
+[ ] Luồng lớp/sự kiện, sức chứa, trùng đăng ký.
+[ ] Khuyến mãi: phần trăm/số tiền, phạm vi, ngày đặc biệt, chọn tốt nhất.
+[ ] Thống kê: doanh thu, công nợ, cọc đang giữ.
+[ ] Đèn: ESP32/Home Assistant, AlarmManager, auto-off, quyền Android 12+.
+[ ] Sao lưu/khôi phục: kiểm tra hợp lệ, safety.
+[ ] Nhật ký, sổ thanh toán.
+[ ] Unit test và cách chạy.
+[ ] Hạn chế và hướng phát triển.
+
+Câu hỏi tự luyện:
+1) Vì sao lịch 10:00-11:00 và 11:00-12:00 không bị coi là trùng?
+2) Nếu phiên vãng lai chưa kết thúc, vì sao chặn lịch trong 2 giờ tới?
+3) Vì sao thanh toán QR phải lưu thêm cột phương thức mới?
+4) Vì sao chỉ hoàn cọc khi trả đủ thiết bị?
+5) Vì sao doanh thu chỉ tính phiên đã thanh toán?
+6) Vì sao cần bản safety khi khôi phục CSDL?
+7) Vì sao mỗi sân chỉ giữ một alarm?
+8) Vì sao dùng transaction khi thêm dịch vụ?
+9) Vì sao khuyến mãi không cộng dồn?
+10) Nếu phí quá hạn vượt cọc thì xử lý thế nào?
+
+Kết thúc tài liệu.
+================================================================================

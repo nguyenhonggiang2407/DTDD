@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/colorBackground">
+    <include layout="@layout/toolbar" />
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:padding="18dp" android:orientation="vertical">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="CLOUD PILOT • DỮ LIỆU TÁCH BIỆT"
+                android:letterSpacing="0.12" android:textColor="@color/colorPrimary"
+                android:textStyle="bold" android:textSize="12sp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="7dp" android:text="Lịch đặt trực tuyến"
+                android:textColor="@color/colorOnPrimaryContainer" android:textSize="26sp"
+                android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:textSize="13sp"
+                android:text="Máy chủ chung nhiều thiết bị. Lịch online CHƯA đồng bộ hai chiều với lịch SQLite offline. Chỉ chủ sân được dùng token quản trị máy chủ." />
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" android:hint="Địa chỉ HTTPS của máy chủ">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/cloudUrl" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:inputType="textUri" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:hint="Token quản trị cloud"
+                app:endIconMode="password_toggle">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/cloudToken" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:inputType="textPassword" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cloudConnect" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:text="Kết nối máy chủ" />
+            <TextView android:id="@+id/cloudStatus"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:textSize="13sp"
+                android:text="Chưa kết nối" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cloudAddCourt"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="+ Thêm sân trên máy chủ" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cloudAddBooking" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="18dp"
+                android:text="+ Tạo lịch online" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cloudRefresh" style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Làm mới danh sách máy chủ" />
+            <TextView android:id="@+id/cloudSummary"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="15dp" android:textSize="14sp"
+                android:textStyle="bold" android:text="Chưa có thống kê máy chủ" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="18dp" android:textSize="18sp"
+                android:textStyle="bold" android:text="Sân trên máy chủ" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" android:textSize="12sp"
+                android:text="Tắt nhận lịch mới không tự hủy lịch đã đặt. Thao tác chỉ ảnh hưởng dữ liệu cloud." />
+            <LinearLayout android:id="@+id/cloudCourtList"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="10dp" android:orientation="vertical" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="18dp" android:textSize="18sp"
+                android:textStyle="bold" android:text="Danh sách đặt sân online" />
+            <LinearLayout android:id="@+id/cloudList"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="14dp" android:orientation="vertical" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

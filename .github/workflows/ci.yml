@@ -1,0 +1,54 @@
+name: CourtMate CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: FastAPI tests (Python 3.12)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Validate syntax
+        run: python -m compileall -q app.py tests
+      - name: Run API tests
+        run: python -m pytest tests -q
+
+  android:
+    name: Android unit tests & debug APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK platform
+        run: sdkmanager --install 'platforms;android-37' 'build-tools;37.0.0'
+      - name: Verify Gradle project and build debug
+        run: bash ./gradlew --no-daemon testDebugUnitTest assembleDebug
+      - name: Upload debug APK (not a release)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: courtmate-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

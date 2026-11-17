@@ -1,0 +1,100 @@
+<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CourtMate • Đặt sân Pickleball</title><style>
+:root{font-family:Inter,system-ui,sans-serif;color:#102f27;background:#f3f7f8}*{box-sizing:border-box}body{margin:0}.wrap{max-width:950px;margin:auto;padding:25px}header{background:#0b392e;color:#fff;padding:44px 0 60px}header h1{font-size:clamp(30px,5vw,50px);margin:12px 0}header p{color:#c3e7d9}.tag{color:#beefd1;letter-spacing:.16em;font-size:13px;font-weight:800}.card{max-width:780px;margin:-30px auto 30px;position:relative;background:#fff;border:1px solid #dce8e7;border-radius:22px;padding:30px;box-shadow:0 10px 35px #0e34271a}label{display:block;font-size:13px;font-weight:700;margin:0 0 7px}input,select{width:100%;padding:13px;border:1px solid #bbd3cb;border-radius:11px;font:inherit;background:#fff;margin-bottom:18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.btn{background:#137954;color:#fff;cursor:pointer;border:0;padding:15px 24px;border-radius:12px;font-size:16px;font-weight:750;width:100%}.btn:disabled{opacity:.5;cursor:not-allowed}.hint{color:#5a7169;font-size:14px}.message{margin-top:18px;line-height:1.55}.error{color:#a12727}.success{color:#046a4d}.subheading{font-size:18px;margin:0 0 10px}.secondary{background:#254b40}.danger{background:#9b3030}.stack{display:flex;gap:12px;flex-wrap:wrap}.stack>.btn{flex:1;min-width:170px}.sr-only{position:absolute;left:-9999px}@media(max-width:600px){.grid{grid-template-columns:1fr}.card{padding:20px}.wrap{padding:18px}}
+</style></head><body><div style="background:#fef3c7;color:#78350f;text-align:center;padding:12px;font:700 14px system-ui">COURTMATE DEMO OFFLINE · Dữ liệu mô phỏng trong trình duyệt · Không gửi thông tin cho máy chủ · Tải lại trang để đặt lại</div><header><div class="wrap"><div class="tag">● COURTMATE</div><h1>Đặt sân Pickleball<br>nhanh chóng, dễ dàng.</h1><p>Đặt trước, xem lịch trống và nhận mã yêu cầu tức thì.</p></div></header><main class="wrap"><div class="card"><h2>Đặt lịch chơi</h2><p class="hint">Chỉ nhận yêu cầu khi cổng đặt sân online đã được chủ sân bật. Một yêu cầu giữ chỗ trong 20 phút.</p><form id="form"><div class="grid"><div><label for="court">Sân</label><select id="court" required></select></div><div><label for="day">Ngày</label><input type="date" id="day" required></div></div><div class="grid"><div><label for="start">Giờ bắt đầu</label><input type="time" id="start" value="18:00" required></div><div><label for="end">Giờ kết thúc</label><input type="time" id="end" value="19:30" required></div></div><div class="grid"><div><label for="name">Họ tên</label><input id="name" required minlength="2" maxlength="100"></div><div><label for="phone">Số điện thoại</label><input id="phone" required pattern="[0-9]{9,11}" autocomplete="tel"></div></div><div class="hint" id="busy"></div><button class="btn" id="send">Gửi yêu cầu đặt sân</button><div class="message" id="message" role="status"></div>
+  </form>
+  <section id="tracking" style="margin-top:24px;border-top:1px solid #dce8e7;padding-top:22px" aria-labelledby="trackingHeading">
+    <h3 class="subheading" id="trackingHeading">Tra cứu hoặc hủy yêu cầu chờ xác nhận</h3>
+    <p class="hint">Sau khi đặt sân, hãy lưu mã đơn và mã bí mật bên dưới. Mã bí mật chỉ hiển thị khi tạo yêu cầu, không gửi qua email hay SMS và không được lưu trên trình duyệt. Không chia sẻ mã này.</p>
+    <div class="grid"><div><label for="lookupId">Mã đơn</label><input id="lookupId" type="number" min="1" placeholder="Ví dụ: 12" autocomplete="off"></div>
+    <div><label for="lookupToken">Mã bí mật của đơn</label><input id="lookupToken" type="text" placeholder="Mã nhận sau khi đặt" autocomplete="off" spellcheck="false"></div></div>
+    <p class="hint" id="trackingText" role="status">Nhập mã đơn và mã bí mật để xem trạng thái.</p>
+    <a id="payLink" href="#" target="_blank" rel="noopener noreferrer" hidden>Đến trang thanh toán của đối tác</a>
+    <div class="stack" style="margin-top:13px"><button type="button" class="btn secondary" id="checkStatus">Kiểm tra trạng thái</button>
+    <button type="button" class="btn danger" id="cancelPending" hidden>Hủy yêu cầu đang chờ</button></div>
+  </section></div></main><script>
+/* CourtMate offline portfolio demo. Intercepts only mock API calls and never sends personal data. */
+(() => {
+  const courts=[
+    {id:1,name:'Sân Pickleball A',price_hour:120000,active:1},
+    {id:2,name:'Sân Pickleball B',price_hour:150000,active:1},
+    {id:3,name:'Sân Premium C',price_hour:200000,active:1},
+    {id:4,name:'Sân Tập D',price_hour:90000,active:1}
+  ];
+  const dateDelta = (n) => { const d=new Date();d.setDate(d.getDate()+n); const off=d.getTimezoneOffset();return new Date(d.getTime()-off*60000).toISOString().slice(0,10); };
+  const tomorrow=dateDelta(1);
+  const bookings=[
+    {id:1,court_id:1,date:tomorrow,start:'08:00',end:'09:30',amount:180000,status:'CONFIRMED',payment_status:'UNPAID',access_token:'demo-existing-booking-not-public',customer_name:'Khách mẫu'},
+    {id:2,court_id:1,date:tomorrow,start:'14:00',end:'15:30',amount:180000,status:'CONFIRMED',payment_status:'UNPAID',access_token:'demo-existing-booking-not-public',customer_name:'Khách mẫu'},
+    {id:3,court_id:2,date:tomorrow,start:'16:00',end:'17:30',amount:225000,status:'CONFIRMED',payment_status:'UNPAID',access_token:'demo-existing-booking-not-public',customer_name:'Khách mẫu'}
+  ];
+  window.COURTMATE_DEMO={courts,bookings};
+  const response=(data,status=200)=>({ok:status>=200 && status<300,status,json:async()=>data});
+  const fail=(detail,status=400)=>response({detail},status);
+  const duration=(start,end) => {let [h1,m1]=start.split(':').map(Number),[h2,m2]=end.split(':').map(Number);return (h2-h1)*60+m2-m1;};
+  const overlaps=(a,b)=>a.start<b.end && a.end>b.start;
+  const redraw=()=>{ if(typeof window.renderAdminDemo==='function')window.renderAdminDemo(); };
+  window.fetch=async (input,opts={})=>{
+    const url=new URL(String(input),'https://courtmate.demo/'); const path=url.pathname;const method=(opts.method||'GET').toUpperCase();
+    const data=opts.body?JSON.parse(opts.body):{};
+    if(path==='/v1/public/courts' && method==='GET') return response(courts.filter(c=>c.active));
+    if(path==='/v1/public/availability' && method==='GET') return response(bookings.filter(b=>b.court_id===Number(url.searchParams.get('court_id')) && b.date===url.searchParams.get('date') && b.status!=='CANCELLED').map(b=>({start:b.start,end:b.end})));
+    if(path==='/v1/public/bookings' && method==='POST'){
+      const c=courts.find(x=>x.id===data.court_id&&x.active);
+      if(!c) return fail('Sân không có sẵn',404);
+      if(!data.customer_name||data.customer_name.trim().length<2||!/^\d{9,11}$/.test(data.customer_phone||'')) return fail('Vui lòng nhập họ tên và số điện thoại hợp lệ',422);
+      if(!data.date||data.date<dateDelta(0)||!/^\d{2}:\d{2}$/.test(data.start||'')||!/^\d{2}:\d{2}$/.test(data.end||'')) return fail('Ngày hoặc giờ không hợp lệ',422);
+      const mins=duration(data.start,data.end);if(mins<30||mins>360) return fail('Thời lượng đặt sân phải từ 30 phút tới 6 giờ',422);
+      if(bookings.some(b=>b.court_id===data.court_id&&b.date===data.date&&b.status!=='CANCELLED'&&overlaps(b,data)))return fail('Khung giờ này đã có người đặt',409);
+      const secret='DEMO-'+crypto.getRandomValues(new Uint32Array(6)).join('-');
+      const row={id:1+Math.max(...bookings.map(b=>b.id)),...data,amount:Math.round(c.price_hour*mins/60),status:'PENDING',payment_status:'UNPAID',access_token:secret,hold_until:new Date(Date.now()+20*60*1000).toISOString()};
+      bookings.push(row);redraw();return response(row,201);
+    }
+    if(path==='/v1/public/booking-status' && method==='POST'){
+      let b=bookings.find(b=>b.id===data.id&&b.access_token===data.access_token);
+      if(!b)return fail('Không tìm thấy yêu cầu hoặc mã bí mật không đúng',404);
+      return response({status:b.status,payment_status:b.payment_status,amount:b.amount,payment_url:null});
+    }
+    if(path==='/v1/public/bookings/cancel' && method==='POST'){
+      let b=bookings.find(b=>b.id===data.id&&b.access_token===data.access_token);
+      if(!b)return fail('Không tìm thấy yêu cầu hoặc mã bí mật không đúng',404);
+      if(b.status!=='PENDING')return fail('Chỉ có thể hủy yêu cầu còn chờ',409);
+      b.status='CANCELLED';redraw();return response({status:b.status});
+    }
+    return fail('Tính năng này chưa có trong demo offline',404);
+  };
+  window.renderAdminDemo=()=>{
+    const active=bookings.filter(x=>x.status!=='CANCELLED');
+    document.getElementById('admin-stats').textContent=`${courts.length} sân • ${bookings.length} yêu cầu • ${active.length} lịch đang giữ / đã xác nhận • ${active.reduce((s,x)=>s+x.amount,0).toLocaleString('vi-VN')} đ dự kiến`;
+    const tbody=document.getElementById('admin-bookings');if(!tbody)return;
+    tbody.innerHTML='';
+    for(const b of bookings){const tr=document.createElement('tr');tr.style.borderTop='1px solid #e1e8e7';
+      for(const t of [String(b.id),courts.find(c=>c.id===b.court_id)?.name||'',b.date+' • '+b.start+'–'+b.end,b.status,b.amount.toLocaleString('vi-VN')+' đ']){
+        const td=document.createElement('td');td.textContent=t;td.style.padding='10px 7px';tr.appendChild(td);
+      }
+      const cell=document.createElement('td');cell.style.padding='10px';
+      if(b.status==='PENDING'){
+       const bt=document.createElement('button');bt.textContent='Xác nhận';bt.type='button';bt.className='btn';bt.style.padding='7px 10px';bt.addEventListener('click',()=>{b.status='CONFIRMED';window.renderAdminDemo();});cell.appendChild(bt);
+      }
+      tr.appendChild(cell);tbody.appendChild(tr);
+    }
+  };
+})();
+</script>
+<script>
+const $=id=>document.getElementById(id);const localToday=()=>{let d=new Date(),offset=d.getTimezoneOffset();return new Date(d.getTime()-offset*60000).toISOString().slice(0,10)};
+$('day').min=localToday();$('day').value=localToday();
+async function json(url,options){let res=await fetch(url,options),obj=await res.json().catch(()=>({detail:'Không đọc được phản hồi'}));if(!res.ok)throw Error(typeof obj.detail==='string'?obj.detail:'Không thể thực hiện');return obj}
+async function load(){try{let courts=await json('/v1/public/courts');$('court').innerHTML='';for(let c of courts){let el=document.createElement('option');el.value=c.id;el.textContent=`${c.name} · ${c.price_hour.toLocaleString('vi-VN')} đ/giờ`;$('court').appendChild(el)}if(!courts.length)$('message').textContent='Chưa có sân nào trên hệ thống.';await busy()}catch(e){$('message').className='message error';$('message').textContent=e.message}}
+async function busy(){if(!$('court').value)return;try{let slots=await json(`/v1/public/availability?court_id=${encodeURIComponent($('court').value)}&date=${encodeURIComponent($('day').value)}`);$('busy').textContent=slots.length?'Đã có lịch: '+slots.map(s=>s.start+'–'+s.end).join(', '):'Chưa có lịch được giữ trên sân này trong ngày.'}catch(e){$('busy').textContent=e.message}}
+$('court').addEventListener('change',busy);$('day').addEventListener('change',busy);
+function bookingCredentials(){let id=Number($('lookupId').value), access_token=$('lookupToken').value.trim();if(!Number.isInteger(id)||id<1||access_token.length<30)throw Error('Cần nhập mã đơn và mã bí mật hợp lệ.');return {id,access_token}}
+async function checkStatus(){try{let info=await json('/v1/public/booking-status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bookingCredentials())});$('trackingText').className='hint';$('trackingText').textContent=`Lịch: ${info.status} • Thanh toán: ${info.payment_status} • Số tiền ${info.amount.toLocaleString('vi-VN')} đ`;
+  $('payLink').hidden=!info.payment_url || info.payment_status!=='BANK_PENDING';
+  $('payLink').removeAttribute('href');
+  if(info.payment_url && info.payment_status==='BANK_PENDING') $('payLink').href=info.payment_url;
+  $('cancelPending').hidden=info.status!=='PENDING'||info.payment_status!=='UNPAID';
+}catch(e){$('trackingText').className='hint error';$('trackingText').textContent=e.message;$('payLink').hidden=true;$('payLink').removeAttribute('href');$('cancelPending').hidden=true}}
+$('checkStatus').addEventListener('click',checkStatus);
+$('cancelPending').addEventListener('click',async()=>{if(!confirm('Bạn muốn hủy yêu cầu đang chờ này?'))return;$('cancelPending').disabled=true;try{await json('/v1/public/bookings/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bookingCredentials())});await checkStatus();await busy()}catch(e){$('trackingText').textContent=e.message}finally{$('cancelPending').disabled=false}});
+$('form').addEventListener('submit',async ev=>{ev.preventDefault();$('send').disabled=true;$('message').textContent='';try{let b=await json('/v1/public/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({court_id:Number($('court').value),date:$('day').value,start:$('start').value,end:$('end').value,customer_name:$('name').value.trim(),customer_phone:$('phone').value})});$('lookupId').value=b.id;$('lookupToken').value=b.access_token;await checkStatus();$('message').className='message success';$('message').textContent=`Đã tạo yêu cầu #${b.id} – số tiền dự kiến ${b.amount.toLocaleString('vi-VN')} đ. Chủ sân sẽ xác nhận. Giữ chỗ tới ${new Date(b.hold_until).toLocaleString('vi-VN')}. Hãy lưu mã đơn và mã bí mật trong phần tra cứu.`;await busy()}catch(e){$('message').className='message error';$('message').textContent=e.message}finally{$('send').disabled=false}});load();
+</script><section class="wrap" style="padding:12px 0 40px;max-width:870px"><div class="card" style="margin:0 auto;max-width:870px"><div class="tag" style="color:#137954">QUẢN TRỊ • DEMO</div><h2>Quản lý lịch sân</h2><p class="hint">Bảng dưới đây mô phỏng cách nhân viên xem, xác nhận lịch đặt. Android là hệ thống quản lý vận hành chính; bảng này chỉ phục vụ trình diễn offline.</p><p id="admin-stats" style="font-weight:750"></p><div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;text-align:left;font-size:14px"><thead><tr><th>Mã</th><th>Sân</th><th>Khung giờ</th><th>Trạng thái</th><th>Giá</th><th></th></tr></thead><tbody id="admin-bookings"></tbody></table></div></div></section><script>window.renderAdminDemo()</script></body></html>

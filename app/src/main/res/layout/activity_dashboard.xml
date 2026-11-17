@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/colorBackground">
+    <include layout="@layout/toolbar" />
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:fillViewport="true" android:clipToPadding="false">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="16dp" android:paddingBottom="24dp">
+            <!-- Inspired by the reference's dark hero, but designed for a Pickleball venue -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/cm_hero_gradient"
+                android:padding="22dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="COURTMATE  •  CONTROL CENTER" android:textColor="@color/cm_mint"
+                    android:textSize="11sp" android:letterSpacing="0.12" android:textStyle="bold" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp" android:text="Sẵn sàng đón khách!"
+                    android:textColor="@color/white" android:textSize="27sp" android:textStyle="bold" />
+                <TextView android:id="@+id/tvLoggedInRole" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:layout_marginTop="7dp"
+                    android:text="CHỦ SÂN" android:textColor="@color/cm_mint"
+                    android:textSize="12sp" android:textStyle="bold" />
+                <TextView android:id="@+id/tvDashboardDate" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                    android:text="Hôm nay" android:textColor="@color/white_70" android:textSize="14sp" />
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:layout_marginTop="19dp" android:background="#36687C89" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="13dp" android:text="Vận hành sân gọn hơn, mọi số liệu trong tầm tay."
+                    android:textColor="@color/white_70" android:textSize="13sp" />
+            </LinearLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="24dp" android:text="Tổng quan hoạt động"
+                android:textColor="@color/cm_navy" android:textSize="19sp" android:textStyle="bold" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" android:orientation="horizontal" android:baselineAligned="false">
+            <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1" app:cardCornerRadius="22dp"
+        app:cardElevation="0dp" app:cardBackgroundColor="@color/cm_mint_soft"
+        app:strokeColor="@color/cm_card_border" app:strokeWidth="1dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Sân hoạt động" android:textColor="#102D2B"
+                android:textSize="12sp" android:letterSpacing="0.025" />
+            <TextView android:id="@+id/tvCourtsActive" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="7dp"
+                android:text="0" android:textColor="#102D2B" android:textSize="25sp"
+                android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+            <Space android:layout_width="12dp" android:layout_height="1dp"/>
+            <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1" app:cardCornerRadius="22dp"
+        app:cardElevation="0dp" app:cardBackgroundColor="@color/cm_gold_soft"
+        app:strokeColor="@color/cm_card_border" app:strokeWidth="1dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Đang chơi" android:textColor="#102D2B"
+                android:textSize="12sp" android:letterSpacing="0.025" />
+            <TextView android:id="@+id/tvPlaying" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="7dp"
+                android:text="0" android:textColor="#102D2B" android:textSize="25sp"
+                android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" android:orientation="horizontal" android:baselineAligned="false">
+            <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1" app:cardCornerRadius="22dp"
+        app:cardElevation="0dp" app:cardBackgroundColor="@color/white"
+        app:strokeColor="@color/cm_card_border" app:strokeWidth="1dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Công nợ" android:textColor="#102D2B"
+                android:textSize="12sp" android:letterSpacing="0.025" />
+            <TextView android:id="@+id/tvReceivable" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="7dp"
+                android:text="0" android:textColor="#102D2B" android:textSize="21sp"
+                android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+            <Space android:layout_width="12dp" android:layout_height="1dp"/>
+            <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1" app:cardCornerRadius="22dp"
+        app:cardElevation="0dp" app:cardBackgroundColor="@color/status_cancelled_bg"
+        app:strokeColor="@color/cm_card_border" app:strokeWidth="1dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Thuê quá hạn" android:textColor="#102D2B"
+                android:textSize="12sp" android:letterSpacing="0.025" />
+            <TextView android:id="@+id/tvOverdue" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="7dp"
+                android:text="0" android:textColor="#102D2B" android:textSize="21sp"
+                android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="12dp"
+                app:cardCornerRadius="24dp" app:cardElevation="0dp" app:cardBackgroundColor="@color/cm_navy">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="20dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="DOANH THU HÔM NAY" android:letterSpacing="0.1"
+                        android:textColor="@color/white_70" android:textSize="12sp" />
+                    <TextView android:id="@+id/tvRevenue" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                        android:text="0" android:textColor="@color/white" android:textSize="31sp"
+                        android:textStyle="bold" />
+                    <TextView android:id="@+id/tvBookingsToday" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                        android:text="Lịch đặt hôm nay" android:textColor="@color/cm_mint" android:textSize="13sp" />
+                    <TextView android:id="@+id/tvDepositsHeld" android:layout_width="match_parent"
+                        android:layout_height="wrap_content" android:layout_marginTop="7dp"
+                        android:text="Tiền cọc" android:textColor="@color/white_70" android:textSize="12sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="24dp" android:text="Truy cập nhanh"
+                android:textColor="@color/cm_navy" android:textSize="19sp" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" android:text="Những việc cần thao tác tại quầy"
+                android:textColor="@color/cm_slate" android:textSize="13sp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" android:orientation="horizontal" android:baselineAligned="false">
+                    <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnManagement" 
+                android:layout_width="0dp" android:layout_height="54dp" android:layout_weight="1"
+                android:text="Quản lý mở rộng" android:textSize="13sp" android:textAllCaps="false"
+                app:cornerRadius="16dp" /><Space android:layout_width="10dp" android:layout_height="1dp"/><com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDashboardStats" style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp" android:layout_height="54dp" android:layout_weight="1"
+                android:text="Thống kê" android:textSize="13sp" android:textAllCaps="false"
+                app:cornerRadius="16dp" />
+                </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" android:orientation="horizontal" android:baselineAligned="false">
+                    <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRecentActivity" style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp" android:layout_height="54dp" android:layout_weight="1"
+                android:text="Nhật ký hoạt động" android:textSize="13sp" android:textAllCaps="false"
+                app:cornerRadius="16dp" /><Space android:layout_width="10dp" android:layout_height="1dp"/><com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCloudBookings" style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp" android:layout_height="54dp" android:layout_weight="1"
+                android:text="Đặt sân online" android:textSize="13sp" android:textAllCaps="false"
+                app:cornerRadius="16dp" />
+                </LinearLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="24dp" android:text="Hoạt động gần đây"
+                android:textColor="@color/cm_navy" android:textSize="19sp" android:textStyle="bold" />
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                app:cardCornerRadius="22dp" app:cardElevation="0dp"
+                app:strokeColor="@color/cm_card_border" app:strokeWidth="1dp">
+                <LinearLayout android:id="@+id/layoutRecentActivity" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="vertical"
+                    android:padding="18dp" />
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </ScrollView>
+    <!-- Floating-style bottom bar, with stable IDs used by DashboardActivity. -->
+    <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+        android:layout_height="72dp" android:layout_marginStart="16dp" android:layout_marginEnd="16dp"
+        android:layout_marginBottom="10dp" app:cardBackgroundColor="@color/cm_navy"
+        app:cardCornerRadius="25dp" app:cardElevation="8dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+            android:orientation="horizontal" android:gravity="center_vertical" android:padding="6dp">
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnBookings"
+                style="@style/Widget.Material3.Button.TextButton" android:layout_width="0dp"
+                android:layout_height="match_parent" android:layout_weight="1"
+                android:text="Lịch đặt" android:textColor="@color/white" android:textAllCaps="false" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnSessions"
+                style="@style/Widget.Material3.Button.TextButton" android:layout_width="0dp"
+                android:layout_height="match_parent" android:layout_weight="1"
+                android:text="Phiên chơi" android:textColor="@color/cm_mint" android:textAllCaps="false" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnTimeline"
+                style="@style/Widget.Material3.Button.TextButton" android:layout_width="0dp"
+                android:layout_height="match_parent" android:layout_weight="1"
+                android:text="Timeline" android:textColor="@color/white" android:textAllCaps="false" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+</LinearLayout>

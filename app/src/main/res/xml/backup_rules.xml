@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <include domain="database" path="courtmate.db" />
+    <include domain="database" path="courtmate.db-wal" />
+    <include domain="database" path="courtmate.db-shm" />
+    <include domain="sharedpref" path="." />
+</full-backup-content>

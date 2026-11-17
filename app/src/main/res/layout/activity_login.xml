@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:fillViewport="true" android:background="@color/colorBackground">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="230dp"
+            android:orientation="vertical" android:gravity="center_vertical"
+            android:background="@drawable/cm_login_gradient" android:padding="28dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="●  COURTMATE" android:letterSpacing="0.12"
+                android:textColor="@color/cm_mint" android:textSize="16sp" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="22dp" android:text="Chào mừng trở lại"
+                android:textColor="@color/white" android:textSize="28sp" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="9dp" android:text="Không gian quản lý sân hiện đại và dễ sử dụng."
+                android:textColor="@color/white_70" android:textSize="14sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="24dp">
+            <TextView android:id="@+id/authTitle" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textSize="25sp" android:textStyle="bold"
+                android:textColor="@color/cm_navy" />
+            <TextView android:id="@+id/authHelp" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="9dp"
+                android:textSize="14sp" android:textColor="@color/cm_slate" />
+            <com.google.android.material.card.MaterialCardView android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="20dp"
+                app:cardCornerRadius="24dp" app:cardElevation="0dp"
+                app:strokeColor="@color/cm_card_border" app:strokeWidth="1dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:padding="20dp">
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:hint="Tên đăng nhập">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/authUsername" android:layout_width="match_parent"
+                            android:layout_height="wrap_content" android:inputType="textNoSuggestions"
+                            android:autofillHints="username" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp" android:hint="Mật khẩu"
+                        app:endIconMode="password_toggle">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/authPassword" android:layout_width="match_parent"
+                            android:layout_height="wrap_content" android:inputType="textPassword"
+                            android:autofillHints="password" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/authSubmit" android:layout_width="match_parent"
+                        android:layout_height="54dp" android:layout_marginTop="24dp"
+                        android:text="Tiếp tục" android:textAllCaps="false" app:cornerRadius="17dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="24dp" android:gravity="center"
+                android:text="COURTMATE  •  Dữ liệu được lưu trên thiết bị"
+                android:textColor="@color/cm_slate" android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

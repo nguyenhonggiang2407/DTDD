@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#6FCF97</color>
+    <color name="colorPrimaryDark">#0B3B25</color>
+    <color name="colorOnPrimary">#05301C</color>
+    <color name="colorPrimaryContainer">#163D29</color>
+    <color name="colorOnPrimaryContainer">#B9F2D2</color>
+
+    <color name="colorSecondary">#F4C766</color>
+    <color name="colorOnSecondary">#2B1D00</color>
+    <color name="colorSecondaryContainer">#4A3712</color>
+    <color name="colorOnSecondaryContainer">#FFE3A3</color>
+
+    <color name="colorSurface">#121A15</color>
+    <color name="colorSurfaceVariant">#1B261F</color>
+    <color name="colorBackground">#0C120E</color>
+    <color name="colorOutline">#36473C</color>
+    <color name="text_accent">#8FE3B4</color>
+
+    <color name="status_active_bg">#163A27</color>
+    <color name="status_active_text">#8FE3B4</color>
+    <color name="status_cancelled_bg">#4A1F22</color>
+    <color name="status_cancelled_text">#FFB4AB</color>
+    <color name="status_maintenance_bg">#3E2E14</color>
+    <color name="status_maintenance_text">#FFD08A</color>
+
+    <color name="chart_bar">#5FD394</color>
+    <color name="chart_text">#B8C6BD</color>
+    <color name="chart_grid">#2A382F</color>
+</resources>

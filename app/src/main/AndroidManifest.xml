@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.CourtMatePickleballCourtManager"
+        android:usesCleartextTraffic="true">
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <activity android:name=".LoginActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".DashboardActivity" android:exported="false" />
+        <activity android:name=".UsersActivity" android:exported="false" />
+        <activity android:name=".ChangePasswordActivity" android:exported="false" />
+        <activity android:name=".CloudBookingsActivity" android:exported="false" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/settings_title" />
+
+        <activity
+            android:name=".AuditLogActivity"
+            android:label="@string/audit_log_title" />
+
+        <activity
+            android:name=".PaymentLedgerActivity"
+            android:label="@string/payment_ledger_title" />
+
+        <activity
+            android:name=".BookingFormActivity"
+            android:label="@string/title_booking_new"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".CourtActivity"
+            android:label="@string/title_courts"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".CustomerActivity"
+            android:label="@string/title_customers"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".StatisticsActivity"
+            android:label="@string/title_stats" />
+
+        <activity
+            android:name=".CourtTimelineActivity"
+            android:label="@string/timeline_title" />
+
+        <activity
+            android:name=".CalendarViewActivity"
+            android:label="@string/calendar_view" />
+
+        <activity
+            android:name=".AboutActivity"
+            android:label="@string/title_about" />
+
+        <activity
+            android:name=".ExtendedManagementActivity"
+            android:label="@string/management_title" />
+
+        <activity
+            android:name=".CourtSessionActivity"
+            android:label="@string/management_sessions" />
+
+        <activity
+            android:name=".SessionDetailActivity"
+            android:label="@string/session_detail_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".PaymentActivity"
+            android:label="@string/payment_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".InvoiceActivity"
+            android:label="@string/invoice_title" />
+
+        <activity
+            android:name=".ServiceManagementActivity"
+            android:label="@string/service_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".WalkInSlotActivity"
+            android:label="@string/walk_in_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".RentalActivity"
+            android:label="@string/rental_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".CoachManagementActivity"
+            android:label="@string/coach_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ClassManagementActivity"
+            android:label="@string/class_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".EventManagementActivity"
+            android:label="@string/event_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".PromotionManagementActivity"
+            android:label="@string/promotion_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".SpecialDateActivity"
+            android:label="@string/special_date_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".LightConfigActivity"
+            android:label="@string/light_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <receiver
+            android:name=".receiver.LightAutoOffReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".receiver.BootReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

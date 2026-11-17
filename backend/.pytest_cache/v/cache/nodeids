@@ -1,0 +1,18 @@
+[
+  "tests/test_api.py::test_concurrent_reservation_one_winner",
+  "tests/test_api.py::test_confirmed_booking_cannot_be_cancelled_by_customer",
+  "tests/test_api.py::test_court_maintenance_via_admin_and_android_alias",
+  "tests/test_api.py::test_court_name_is_normalized",
+  "tests/test_api.py::test_customer_private_status_and_payment_url",
+  "tests/test_api.py::test_expired_hold_is_released",
+  "tests/test_api.py::test_payment_disabled_without_partner_env",
+  "tests/test_api.py::test_payment_rejects_unverified_and_duplicate",
+  "tests/test_api.py::test_public_cancel_requires_secret_and_releases_slot",
+  "tests/test_api.py::test_public_portal_off_and_invalid_duration",
+  "tests/test_api.py::test_public_status_is_rate_limited",
+  "tests/test_api.py::test_rbac_and_booking_conflict",
+  "tests/test_api.py::test_replay_timestamp_rejected",
+  "tests/test_api.py::test_staff_api_does_not_expose_customer_secret",
+  "tests/test_api.py::test_summary_daily_counts_and_actual_paid_amount",
+  "tests/test_api.py::test_today_past_times_are_blocked"
+]
